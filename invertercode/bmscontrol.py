@@ -69,6 +69,12 @@ bms_dict = {
     0xF015: {'Name': 'Total Pack Cycles',
              'Bytes': 1, 'Encode': 2, 'Signed': False, 'Priority': 4,
              'Scale': 1, 'Max': 65355, 'Min': 0},
+    0xF032: {'Name': 'Lowest Cell Voltage',
+             'Bytes': 1, 'Encode': 2, 'Signed': False, 'Priority': 2,
+             'Scale': 0.0001, 'Max': 5, 'Min': 0},
+    0xF033: {'Name': 'Highest Cell Voltage',
+             'Bytes': 1, 'Encode': 2, 'Signed': False, 'Priority': 2,
+             'Scale': 0.0001, 'Max': 5, 'Min': 0},
     0xF0FF: {'Name': 'Raw Temperature',
              'Bytes': 3, 'Encode': 1, 'Signed': True, 'Priority': 3,
              'Scale': 1, 'Max': 65355, 'Min': 0},
@@ -222,10 +228,12 @@ class handle_rs232(threading.Thread):
                 if value['New']:
                     value['New'] = False
                     if isinstance(value['Current'], list):
+                        print ('BMS/'+str(key))
                         client.publish('BMS/'+str(key),
                                        json.dumps(value['Current']),
                                        retain=True)
                     else:
+                        print ('BMS/'+str(key) + ' = ' + str(value['Current']))
                         client.publish('BMS/'+str(key),
                                        str(value['Current']), retain=True)
         #print 'publish'

@@ -466,7 +466,7 @@ handle_485_t.start()
 handle_485_inverter_data_t = handle_485_inverter_data(2, handle_485_t)
 handle_485_inverter_data_t.daemon = True
 handle_485_inverter_data_t.start()
-handle_485_remote_data_t = handle_485_remote_data(2, handle_485_t)
+handle_485_remote_data_t = handle_485_remote_data(3, handle_485_t)
 handle_485_remote_data_t.daemon = True
 handle_485_remote_data_t.start()
 
