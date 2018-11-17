@@ -199,11 +199,6 @@ remote_AGS_0xA0_dict = {
 remote_data_format = ('>16B')
 remote_data_s = struct.Struct(remote_data_format)
 
-inverter_ctrl_dict = {
-    'InverterState': {'Current': True},
-    'ChargerState': {'Current': True}
-}
-
 
 class handle_485(threading.Thread):
     def __init__(self, threadID):
@@ -228,7 +223,7 @@ class handle_485(threading.Thread):
             while read_loop:
                 x = self.ser.read(1)
                 t = time.time()
-                t_change = t - t_old
+                t_change = t-t_old
                 if x != '':
                     t_old = t
                     # print str(t_change) + ' : '+ binascii.hexlify(x)
@@ -241,8 +236,8 @@ class handle_485(threading.Thread):
                         self.inverter_bytestream = x_string
                         self.inverter_bytestream_flag = True
                     read_loop = False
-                    # print (binascii.hexlify(self.inverter_bytestream))
-                    # print ('end of inverter read time'
+                    #print (binascii.hexlify(self.inverter_bytestream))
+                    #print ('end of inverter read time'
                     #       + str(time.time()-x_string_start_t))
                     threadLock.release()
                     # print (str(t_change))
@@ -251,13 +246,13 @@ class handle_485(threading.Thread):
             time.sleep(0.01)
             if self.remote_bytestream_flag:
                 threadLock.acquire()
-                # print ('start remote write'+str(time.time()-x_string_start_t))
+                #print ('start remote write'+str(time.time()-x_string_start_t))
                 self.ser.write(self.remote_bytestream)
                 x = self.ser.read(len(self.remote_bytestream))
-                # print (str(self.ser.out_waiting))
+                #print (str(self.ser.out_waiting))
                 self.remote_bytestream_flag = False
                 # print (binascii.hexlify(self.remote_bytestream))
-                # print ('end remote write'+str(time.time()-x_string_start_t))
+                #print ('end remote write'+str(time.time()-x_string_start_t))
                 threadLock.release()
             time.sleep(0.01)
             GPIO.output(17, GPIO.LOW)
@@ -450,19 +445,17 @@ class handle_485_remote_data(threading.Thread):
                     self.Inverter_State_flag = False
                     client.publish('Remote/Inverter_State', 0,
                                    retain=True)
-                    print ('Inverter_State=' + str(value[value.keys()[0]
-                                                         ]['Current']))
+                    print ('Inverter_State=' + str(value[value.keys()[0]]['Current']))
                 else:
                     self.Inverter_State_flag = True
-                    print ('Inverter_State=' + str(value[value.keys()[0]
-                                                         ]['Current']))
+                    print ('Inverter_State=' + str(value[value.keys()[0]]['Current']))
             self.remote_data_list.append(value[value.keys()[0]]['Current'])
         self.handle_485_t.remote_bytestream = remote_data_s.pack(
             *self.remote_data_list)
         self.handle_485_t.remote_bytestream_flag = True
 
 
-class handle_inverter_ctrl(threading.Thread):
+class handle_inverter_ctl(threading.Thread):
     def __init__(self, threadID, inverter_data_t, remote_data_t):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -479,13 +472,6 @@ class handle_inverter_ctrl(threading.Thread):
         topic = message.topic.split('/')
         print ('topic = ' + str(topic[1]))
         print ('message received = ' + message.payload)
-        if str(topic[1]) in inverter_ctrl_dict:
-            self.decode()
-        else:
-            print 'Unknown Mqtt topic'
-
-    def decode(self):
-        time.sleep(.08)
 
 
 client = mqtt.Client('Inverter_py')
@@ -502,10 +488,10 @@ handle_485_inverter_data_t.start()
 handle_485_remote_data_t = handle_485_remote_data(3, handle_485_t)
 handle_485_remote_data_t.daemon = True
 handle_485_remote_data_t.start()
-handle_inverter_ctrl_t = handle_inverter_ctrl(4, handle_485_inverter_data_t,
-                                              handle_485_remote_data_t)
-handle_inverter_ctrl_t.daemon = True
-handle_inverter_ctrl_t.start()
+handle_inverter_ctl_t = handle_485_remote_data(3, handle_485_inverter_data_t,
+                                               handle_485_remote_data_t)
+handle_inverter_ctl_t.daemon = True
+handle_inverter_ctl_t.start()
 
 while True:
     time.sleep(1)
