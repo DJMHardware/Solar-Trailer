@@ -200,8 +200,14 @@ remote_data_format = ('>16B')
 remote_data_s = struct.Struct(remote_data_format)
 
 inverter_ctrl_dict = {
-    'InverterState': {'Current': True},
-    'ChargerState': {'Current': True}
+    'Inverter_State': {'Current': False},
+    'Charger_State': {'Current': True,
+                      'True': ['FLOATMODE', 'ABSORBMODE', 'BULKMODE',
+                               'BATSAVERMODE', 'EQMODE', 'CHARGEMODE']},
+    'Disable Refloat': {'Current': False},
+    'Force Silent': {'Current': False},
+    'Force Float': {'Current': False},
+    'Force Bulk': {'Current': False},
 }
 
 
@@ -401,7 +407,7 @@ class handle_485_remote_data(threading.Thread):
                         value[value.keys()[0]]['Current'] = int(
                             float(message.payload) / (float(value[
                                 value.keys()[0]]['Scale'])))
-                        client.publish('Remote/'+str(value.keys()[0])
+                        client.publish('Remote/' + str(value.keys()[0])
                                        + '/Current',
                                        str(value[value.keys()[0]]['Current']),
                                        retain=True)
@@ -415,8 +421,8 @@ class handle_485_remote_data(threading.Thread):
                                        + '/IOMap',
                                        json.dumps(value[value.keys()[0]]),
                                        retain=True)
-                        print ('Remote/'+str(value.keys()[0]) + '/Default ='
-                               + str(value[value.keys()[0]]['Default']))
+                        print ('Remote/' + str(value.keys()[0]) + '/Default =' +
+                               str(value[value.keys()[0]]['Default']))
                 else:
                     value[value.keys()[0]]['Current'] = int(message.payload)
                 print ('Current = ' + str(value[value.keys()[0]]['Current']))
@@ -468,29 +474,86 @@ class handle_inverter_ctrl(threading.Thread):
         self.threadID = threadID
         self.inverter_data_t = inverter_data_t
         self.remote_data_t = remote_data_t
+        for state, data in inverter_ctrl_dict.items():
+            data['Retry_Count'] = 0
+            data['Set'] = data['Current']
+            data['State_old'] = data['Current']
 
     def run(self):
-        client.subscribe([("InverterCtrl/+", 0)])
-        client.on_message = self.mqtt_on_message
+        time.sleep(1)
+        ctrlclient.subscribe([("InverterCtrl/+/Set", 0)])
+        ctrlclient.on_message = self.mqtt_on_message
         while True:
-            time.sleep(.08)
+            for state, data in inverter_ctrl_dict.items():
+                self.update_state(state, data)
+            time.sleep(.1)
+
+    def update_state(self, state, data):
+        data['State_old'] = data['Current']
+        if (((data['Set']) != (data['Current'])) and (
+                data['Retry_Count'] >= 10)):
+            self.set_state(state, data)
+        self.check_state(state, data)
+        if data['Current'] != data['State_old']:
+            print 'publish = ' + str(data
+                                     ['Current'])
+            ctrlclient.publish('InverterCtrl/' + state, str(
+                data['Current']), retain=True)
+
+    def set_state(self, state, data):
+        if state is 'Inverter_State':
+            remote_dict[0x00][state]['Current'] |= remote_dict[
+                0x00][state]['Lookup_Table']['Inverter_ON_OFF']
+            data['Retry_Count'] = 0
+        if state is 'Charger_State':
+            remote_dict[0x00]['Inverter_State']['Current'] |= remote_dict[
+                0x00]['Inverter_State']['Lookup_Table']['Charger_ON_OFF']
+            data['Retry_Count'] = 0
+
+    def check_state(self, state, data):
+        if state is 'Inverter_State':
+            if (self.inverter_data_t.inverter_dict['Inverter_LED']
+                    ['Current'] is True):
+                data['Current'] = True
+            else:
+                data['Current'] = False
+        if state is 'Charger_State':
+            if (self.inverter_data_t.inverter_dict['Inverter_Status']
+                    ['Human'] in data['True']):
+                data['Current'] = True
+            else:
+                data['Current'] = False
 
     def mqtt_on_message(self, client, userdata, message):
         topic = message.topic.split('/')
         print ('topic = ' + str(topic[1]))
         print ('message received = ' + message.payload)
         if str(topic[1]) in inverter_ctrl_dict:
-            self.decode()
+            if len(topic) > 2:
+                self.decode(message, topic)
         else:
             print 'Unknown Mqtt topic'
 
-    def decode(self):
-        time.sleep(.08)
+    def decode(self, message, topic):
+        if topic[2] == 'Set':
+            print 'setting ' + str(topic[1]) + ' = ' + (message.payload)
+            inverter_ctrl_dict[topic[1]]['Retry_Count'] = 9
+            if message.payload == 'True':
+                print 'state True'
+                inverter_ctrl_dict[topic[1]]['Set'] = True
+            else:
+                print 'state False'
+                inverter_ctrl_dict[topic[1]]['Set'] = False
+            inverter_ctrl_dict[topic[1]]['Retry_Count'] = 10
+            self.update_state(topic[1], inverter_ctrl_dict[topic[1]])
 
 
 client = mqtt.Client('Inverter_py')
 client.connect('localhost')
 client.loop_start()
+ctrlclient = mqtt.Client('InverterCtrl_py')
+ctrlclient.connect('localhost')
+ctrlclient.loop_start()
 
 threadLock = threading.Lock()
 handle_485_t = handle_485(1)
