@@ -201,13 +201,14 @@ remote_data_s = struct.Struct(remote_data_format)
 
 inverter_ctrl_dict = {
     'Inverter_State': {'Current': False},
+    'Search_State': {'Current': False},
     'Charger_State': {'Current': True,
                       'True': ['FLOATMODE', 'ABSORBMODE', 'BULKMODE',
                                'BATSAVERMODE', 'EQMODE', 'CHARGEMODE']},
-    'Disable Refloat': {'Current': False},
-    'Force Silent': {'Current': False},
-    'Force Float': {'Current': False},
-    'Force Bulk': {'Current': False},
+    'Disable_Refloat': {'Current': False},
+    'Force_Silent': {'Current': False},
+    'Force_Float': {'Current': False},
+    'Force_Bulk': {'Current': False},
 }
 
 
@@ -353,10 +354,12 @@ class handle_485_remote_data(threading.Thread):
         self.remote_data_list = []
         self.remote_data_names_dict = []
         self.Inverter_State_flag = False
+        self.remote_dict = {}
         for key, value in remote_dict.items():
-            value[value.keys()[0]]['Current'] = value[
-                value.keys()[0]]['Default']
-            self.remote_data_list.append(value[value.keys()[0]]['Current'])
+            self.remote_dict[value.keys()[0]] = value[value.keys()[0]]
+        for key, value in self.remote_dict.items():
+            value['Current'] = value['Default']
+            self.remote_data_list.append(value['Current'])
 
     def run(self):
         while not self.handle_485_t.inverter_voltage:
@@ -373,96 +376,89 @@ class handle_485_remote_data(threading.Thread):
 
     def scale_remote_dict(self):
         print 'scaling'
-        for key, value in remote_dict.items():
-            if 'Scale' in value[value.keys()[0]]:
-                if isinstance(value[value.keys()[0]]['Scale'], dict):
-                    value[value.keys()[0]]['Scale'] = value[value.keys()[
-                        0]]['Scale'][self.handle_485_t.inverter_voltage]
-                    value[value.keys()[0]]['Steps'] = value[value.keys()[
-                        0]]['Scale']
-                    print (str(value.keys()[0]) + ' Scale = '
-                           + str(value[value.keys()[0]]['Scale']))
-            if 'Min' in value[value.keys()[0]]:
-                if isinstance(value[value.keys()[0]]['Min'], dict):
-                    value[value.keys()[0]]['Min'] = value[value.keys()[
-                        0]]['Min'][self.handle_485_t.inverter_voltage]
-                    print (str(value.keys()[0]) + ' Min = '
-                           + str(value[value.keys()[0]]['Min']))
-            if 'Max' in value[value.keys()[0]]:
-                if isinstance(value[value.keys()[0]]['Max'], dict):
-                    value[value.keys()[0]]['Max'] = value[value.keys()[
-                        0]]['Max'][self.handle_485_t.inverter_voltage]
-                    print (str(value.keys()[0]) + ' Max = '
-                           + str(value[value.keys()[0]]['Max']))
+        for key, value in self.remote_dict.items():
+            if 'Scale' in value:
+                if isinstance(value['Scale'], dict):
+                    value['Scale'] = value[
+                        'Scale'][self.handle_485_t.inverter_voltage]
+                    value['Steps'] = value['Scale']
+                    print (str(key) + ' Scale = '
+                           + str(value['Scale']))
+            if 'Min' in value:
+                if isinstance(value['Min'], dict):
+                    value['Min'] = value[
+                        'Min'][self.handle_485_t.inverter_voltage]
+                    print (str(key) + ' Min = '
+                           + str(value['Min']))
+            if 'Max' in value:
+                if isinstance(value['Max'], dict):
+                    value['Max'] = value[
+                        'Max'][self.handle_485_t.inverter_voltage]
+                    print (str(key) + ' Max = '
+                           + str(value['Max']))
 
     def mqtt_on_message(self, client, userdata, message):
         topic = message.topic.split('/')
         print ('topic = ' + str(topic[1]))
         print ('message received = ' + message.payload)
-        for key, value in remote_dict.items():
-            if value.keys()[0] == topic[1]:
+        for key, value in self.remote_dict.items():
+            if key == topic[1]:
                 if len(topic) > 2:
                     print (topic[2])
                     if topic[2] == 'Human':
-                        value[value.keys()[0]]['Current'] = int(
-                            float(message.payload) / (float(value[
-                                value.keys()[0]]['Scale'])))
-                        client.publish('Remote/' + str(value.keys()[0])
+                        value['Current'] = int(
+                            float(message.payload) / (float(value['Scale'])))
+                        client.publish('Remote/' + str(key)
                                        + '/Current',
-                                       str(value[value.keys()[0]]['Current']),
+                                       str(value['Current']),
                                        retain=True)
-                        print ('Remote/'+str(value.keys()[0]) + '/Current ='
-                               + str(value[value.keys()[0]]['Current']))
+                        print ('Remote/' + str(key) + '/Current ='
+                               + str(value['Current']))
                     if topic[2] == 'Default':
-                        value[value.keys()[0]]['Default'] = int(
-                            float(message.payload) / (float(value[
-                                value.keys()[0]]['Scale'])))
-                        client.publish('Remote/'+str(value.keys()[0])
+                        value['Default'] = int(
+                            float(message.payload) / (float(value['Scale'])))
+                        client.publish('Remote/' + str(key)
                                        + '/IOMap',
-                                       json.dumps(value[value.keys()[0]]),
+                                       json.dumps(value),
                                        retain=True)
-                        print ('Remote/' + str(value.keys()[0]) + '/Default =' +
-                               str(value[value.keys()[0]]['Default']))
+                        print ('Remote/' + str(key) + '/Default ='
+                               + str(value['Default']))
                 else:
-                    value[value.keys()[0]]['Current'] = int(message.payload)
-                print ('Current = ' + str(value[value.keys()[0]]['Current']))
+                    value['Current'] = int(message.payload)
+                print ('Current = ' + str(value['Current']))
 
     def publish_remote_iomap(self):
-        for key, value in remote_dict.items():
-            # print value[value.keys()[0]]
-            client.publish('Remote/'+str(value.keys()[0]) + '/IOMap',
-                           json.dumps(value[value.keys()[0]]), retain=True)
+        for key, value in self.remote_dict.items():
+            # print value
+            client.publish('Remote/' + str(key) + '/IOMap',
+                           json.dumps(value), retain=True)
 
     def build_bytestream(self):
         self.remote_data_list = []
         for key, value in remote_dict.items():
-            if value.keys()[0] == 'Hours' and value[
-                                            value.keys()[0]]['Current'] != int(
-                                                time.strftime("%H")):
-                value[value.keys()[0]]['Current'] = int(time.strftime("%H"))
-                client.publish('Remote/Hours', value[value.keys()[0]]
+            key = value.keys()[0]
+            value = value[value.keys()[0]]
+            if key == 'Hours' and value['Current'] != int(time.strftime("%H")):
+                value['Current'] = int(time.strftime("%H"))
+                client.publish('Remote/Hours', value
                                ['Current'], retain=True)
-            if value.keys()[0] == 'Minutes' and value[
-                                            value.keys()[0]]['Current'] != int(
-                                                time.strftime("%M")):
-                value[value.keys()[0]]['Current'] = int(time.strftime("%M"))
-                client.publish('Remote/Minutes', value[value.keys()[0]]
+            if key == 'Minutes' and value['Current'] != int(
+                    time.strftime("%M")):
+                value['Current'] = int(time.strftime("%M"))
+                client.publish('Remote/Minutes', value
                                ['Current'], retain=True)
             # Inverter State btye has to be returned to zero after single xfer
-            if value.keys()[0] == 'Inverter_State' and value[
-                                            value.keys()[0]]['Current']:
+            if key == 'Inverter_State' and value['Current']:
                 if self.Inverter_State_flag:
-                    value[value.keys()[0]]['Current'] = 0
+                    value['Current'] = 0
                     self.Inverter_State_flag = False
                     client.publish('Remote/Inverter_State', 0,
                                    retain=True)
-                    print ('Inverter_State=' + str(value[value.keys()[0]
-                                                         ]['Current']))
+                    print ('Inverter_State=' + str(value['Current']))
                 else:
                     self.Inverter_State_flag = True
-                    print ('Inverter_State=' + str(value[value.keys()[0]
-                                                         ]['Current']))
-            self.remote_data_list.append(value[value.keys()[0]]['Current'])
+                    print ('Inverter_State=' + str(value['Current']))
+            self.remote_data_list.append(value['Current'])
         self.handle_485_t.remote_bytestream = remote_data_s.pack(
             *self.remote_data_list)
         self.handle_485_t.remote_bytestream_flag = True
@@ -490,9 +486,10 @@ class handle_inverter_ctrl(threading.Thread):
 
     def update_state(self, state, data):
         data['State_old'] = data['Current']
-        if (((data['Set']) != (data['Current'])) and (
-                data['Retry_Count'] >= 10)):
-            self.set_state(state, data)
+        if (data['Set'] != data['Current']):
+            data['Retry_Count'] += 1
+            if (data['Retry_Count'] >= 10):
+                self.set_state(state, data)
         self.check_state(state, data)
         if data['Current'] != data['State_old']:
             print 'publish = ' + str(data
@@ -520,6 +517,12 @@ class handle_inverter_ctrl(threading.Thread):
         if state is 'Charger_State':
             if (self.inverter_data_t.inverter_dict['Inverter_Status']
                     ['Human'] in data['True']):
+                data['Current'] = True
+            else:
+                data['Current'] = False
+        if state is 'Search_State':
+            if (self.inverter_data_t.inverter_dict['Inverter_Status']
+                    ['Human'] is 'SEARCHMODE'):
                 data['Current'] = True
             else:
                 data['Current'] = False
