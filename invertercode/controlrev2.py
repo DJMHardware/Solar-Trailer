@@ -24,7 +24,7 @@ inverter_format = ('>2B 2H 2B 2? 8B H B')
 
 inverter_test_data = (
     0x40, 0x00, 480, 10, 120, 119, 1, 1, 10,
-    30, 32, 35,  0x6F, 0, 2, 4, 600, 0, 0)
+    30, 32, 35, 0x6F, 0, 2, 4, 600, 0, 0)
 
 # remote data
 inverter_dict = {
@@ -499,12 +499,12 @@ class handle_inverter_ctrl(threading.Thread):
 
     def set_state(self, state, data):
         if state is 'Inverter_State':
-            remote_dict[0x00][state]['Current'] |= remote_dict[
-                0x00][state]['Lookup_Table']['Inverter_ON_OFF']
+            self.remote_dict[state]['Current'] |= self.remote_dict[
+                state]['Lookup_Table']['Inverter_ON_OFF']
             data['Retry_Count'] = 0
         if state is 'Charger_State':
-            remote_dict[0x00]['Inverter_State']['Current'] |= remote_dict[
-                0x00]['Inverter_State']['Lookup_Table']['Charger_ON_OFF']
+            self.remote_dict['Inverter_State']['Current'] |= remote_dict[
+                'Inverter_State']['Lookup_Table']['Charger_ON_OFF']
             data['Retry_Count'] = 0
 
     def check_state(self, state, data):
