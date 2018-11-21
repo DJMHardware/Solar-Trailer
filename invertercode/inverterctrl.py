@@ -145,7 +145,13 @@ remote_dict = {
     0x05: {'AC_shore_amps': {'Default': 15, 'Scale': 1, 'Steps': 1,
                              'Min': 5, 'Max': 60}},
     0x06: {'Remote_revision': {'Default': 36}},
-    0x07: {'Parallel_threshold_Force_Charge': {'Default': 0x06}},
+    0x07: {'Parallel_threshold_Force_Charge': {'Default': 0x06,
+                                               'Lookup_Table':
+                                               {'Disable Refloat': 0x10,
+                                                'Force Silent': 0x20,
+                                                'Force Float': 0x40,
+                                                'Force Bulk': 0x80,
+                                                }}},
     0x08: {'Auto_Genstart': {'Default': 0, 'Lookup_Table': {
                                             'Off': 0x00,
                                             'Enable': 0x01,
@@ -200,12 +206,17 @@ remote_data_format = ('>16B')
 remote_data_s = struct.Struct(remote_data_format)
 
 inverter_ctrl_dict = {
-    'Inverter_State': {'Current': False},
-    'Search_State': {'Current': False},
+    'Inverter_State': {'Current': False,
+                       'True': ['INVERTMODE', 'SEARCHMODE']},
+    'Search_State': {'Current': False,
+                     'True': ['FLOATMODE', 'ABSORBMODE', 'BULKMODE',
+                              'BATSAVERMODE', 'EQMODE', 'CHARGEMODE',
+                              'ChargerStandby', 'SEARCHMODE']},
     'Charger_State': {'Current': True,
                       'True': ['FLOATMODE', 'ABSORBMODE', 'BULKMODE',
                                'BATSAVERMODE', 'EQMODE', 'CHARGEMODE']},
     'Disable_Refloat': {'Current': False},
+    'Disable_AC_In': {'Current': False},
     'Force_Silent': {'Current': False},
     'Force_Float': {'Current': False},
     'Force_Bulk': {'Current': False},
@@ -303,19 +314,20 @@ class handle_485_inverter_data(threading.Thread):
                     print 'bad data'
                 self.handle_485_t.inverter_bytestream_flag = False
             time.sleep(0.1)
-        #    print (str((len(x_string)-1)) + ' ' + binascii.hexlify(x) + ' ' + str(t_change)  )
+        #    print (str((len(x_string)-1)) + ' ' + binascii.hexlify(x) + ' '
+        # + str(t_change)  )
 
     def decode_bytestream(self):
         inv_data_named_dict = self.inv_data_named_s._make(
-                        list(self.inv_data_s.unpack(
-                            self.handle_485_t.inverter_bytestream)))._asdict()
+            list(self.inv_data_s.unpack(
+                self.handle_485_t.inverter_bytestream)))._asdict()
         for key, value in self.inverter_dict.items():
             value['Current'] = inv_data_named_dict[key]
             if key == 'Inverter_Model':
                 value['Human'] = value['Lookup_Table'][
-                                value['Current']]['Model']
+                    value['Current']]['Model']
                 self.handle_485_t.inverter_voltage = value['Lookup_Table'][
-                                value['Current']]['Voltage']
+                    value['Current']]['Voltage']
             elif key == 'Inverter_Status':
                 value['Human'] = value['Lookup_Table'][value['Current']]
             elif key == 'Inverter_Fault':
@@ -323,18 +335,19 @@ class handle_485_inverter_data(threading.Thread):
             elif key == 'Inverter_LED' or key == 'Charger_LED':
                 value['Human'] = value[value['Current']]
             elif 'Scale' in value:
-                value['Human'] = value['Current']*value['Scale']
+                value['Human'] = value['Current'] * value['Scale']
 
     def publish_inverter_data(self):
         for key, value in self.inverter_dict.items():
-            if self.inverter_dict_old[key] is None or self.inverter_dict_old[key] != value['Current']:
+            if self.inverter_dict_old[key] is None or self.inverter_dict_old[
+                    key] != value['Current']:
                 client.publish(
-                    'Inverter/'+key, str(value['Current']),
+                    'Inverter/' + key, str(value['Current']),
                     retain=True)
                 print (key + '=' + str(value['Current']))
                 if 'Human' in value:
                     client.publish(
-                        'Inverter/'+key+'/Human', str(value['Human']),
+                        'Inverter/' + key + '/Human', str(value['Human']),
                         retain=True)
                     print (key + ' Human =' + str(value['Human']))
             self.inverter_dict_old[key] = value['Current']
@@ -342,7 +355,7 @@ class handle_485_inverter_data(threading.Thread):
     def publish_inverter_iomap(self):
         for key, value in inverter_dict.items():
             # print value[value.keys()[0]]
-            client.publish('Inverter/'+str(value.keys()[0]) + '/IOMap',
+            client.publish('Inverter/' + str(value.keys()[0]) + '/IOMap',
                            json.dumps(value[value.keys()[0]]), retain=True)
 
 
@@ -468,8 +481,8 @@ class handle_inverter_ctrl(threading.Thread):
     def __init__(self, threadID, inverter_data_t, remote_data_t):
         threading.Thread.__init__(self)
         self.threadID = threadID
-        self.inverter_data_t = inverter_data_t
-        self.remote_data_t = remote_data_t
+        self.inverter_dict = inverter_data_t.inverter_dict
+        self.remote_dict = remote_data_t.remote_dict
         for state, data in inverter_ctrl_dict.items():
             data['Retry_Count'] = 0
             data['Set'] = data['Current']
@@ -503,26 +516,57 @@ class handle_inverter_ctrl(threading.Thread):
                 state]['Lookup_Table']['Inverter_ON_OFF']
             data['Retry_Count'] = 0
         if state is 'Charger_State':
-            self.remote_dict['Inverter_State']['Current'] |= remote_dict[
-                'Inverter_State']['Lookup_Table']['Charger_ON_OFF']
+            if not(data['Set'] and ((
+                    self.remote_dict['VAC_cut_out_voltage']['Current'] is
+                    self.remote_dict['VAC_cut_out_voltage']['Lookup_Table'][
+                        'EMS_over_ride_open_relay'])
+                    or (self.inverter_dict['AC_Volts_in']['Current']
+                        <= (self.remote_dict['VAC_cut_out_voltage'
+                                             ]['Current'] - 35)))
+                   ):
+                self.remote_dict['Inverter_State'][
+                    'Current'] |= self.remote_dict[
+                    'Inverter_State']['Lookup_Table']['Charger_ON_OFF']
             data['Retry_Count'] = 0
+        if state is 'Disable_AC_In':
+            data['Retry_Count'] = 0
+            if data['Set'] is True:
+                self.remote_dict['VAC_cut_out_voltage'][
+                    'Default'] = self.remote_dict[
+                    'VAC_cut_out_voltage']['Current']
+                self.remote_dict['VAC_cut_out_voltage'][
+                    'Current'] = self.remote_dict['VAC_cut_out_voltage'][
+                        'Lookup_Table']['EMS_over_ride_open_relay']
+            else:
+                self.remote_dict['VAC_cut_out_voltage'][
+                    'Current'] = self.remote_dict[
+                    'VAC_cut_out_voltage']['Default']
 
     def check_state(self, state, data):
         if state is 'Inverter_State':
-            if (self.inverter_data_t.inverter_dict['Inverter_LED']
-                    ['Current'] is True):
+            if (self.inverter_dict['Inverter_LED']
+                    ['Current'] is True) or (
+                        self.inverter_dict['Inverter_Status'][
+                            'Human'] in data['True']):
                 data['Current'] = True
             else:
                 data['Current'] = False
         if state is 'Charger_State':
-            if (self.inverter_data_t.inverter_dict['Inverter_Status']
+            if (self.inverter_dict['Inverter_Status']
                     ['Human'] in data['True']):
                 data['Current'] = True
             else:
                 data['Current'] = False
         if state is 'Search_State':
-            if (self.inverter_data_t.inverter_dict['Inverter_Status']
-                    ['Human'] is 'SEARCHMODE'):
+            if ((self.inverter_dict['Inverter_Status'][
+                    'Human'] in data['True']) and (data['Set'])):
+                data['Current'] = True
+            else:
+                data['Current'] = False
+        if state is 'Disable_AC_In':
+            if (self.remote_dict['VAC_cut_out_voltage'][
+                    'Current'] is self.remote_dict['VAC_cut_out_voltage'][
+                        'Lookup_Table']['EMS_over_ride_open_relay']):
                 data['Current'] = True
             else:
                 data['Current'] = False
