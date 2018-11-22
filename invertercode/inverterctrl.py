@@ -163,18 +163,18 @@ remote_dict = {
                                    'Min': {12: 90, 24: 190, 48: 190},
                                    'Max': {12: 160, 24: 255, 48: 255},
                                    'Scale': {12: 0.1, 24: 0.1, 48: 0.2}}},
-    0x0a: {'VAC_cut_out_voltage': {'Default': 155, 'Lookup_Table': {
-                                            '60VAC': 110,
-                                            '65VAC': 122,
-                                            '70VAC': 135,
-                                            '75VAC': 145,
-                                            '80VAC': 155,
-                                            '85VAC': 165,
-                                            '90VAC': 175,
-                                            '95VAC': 182,
-                                            '100VAC': 190,
-                                            'EMS_over_ride_open_relay': 255,
-                                           }}},
+    0x0a: {'VAC_cut_out_voltage': {'Default': 155, 'Scale': 1,
+                                   'Lookup_Table': {
+                                       '60VAC': 110,
+                                       '65VAC': 122,
+                                       '70VAC': 135,
+                                       '75VAC': 145,
+                                       '80VAC': 155,
+                                       '85VAC': 165,
+                                       '90VAC': 175,
+                                       '95VAC': 182,
+                                       '100VAC': 190,
+                                       'EMS_over_ride_open_relay': 255}}},
     0x0b: {'Float_Volts': {'Default': 137, 'Min': 100, 'Max': 255,
                            'Scale': {12: 0.1, 24: 0.2, 48: 0.4}}},
     0x0c: {'EQ_Volts': {'Default': 0, 'Min': 0, 'Max': 20,
@@ -211,7 +211,7 @@ inverter_ctrl_dict = {
     'Search_State': {'Current': False,
                      'True': ['FLOATMODE', 'ABSORBMODE', 'BULKMODE',
                               'BATSAVERMODE', 'EQMODE', 'CHARGEMODE',
-                              'ChargerStandby', 'SEARCHMODE']},
+                              'ChargerStandby', 'SEARCHMODE', 'INVERTMODE']},
     'Charger_State': {'Current': True,
                       'True': ['FLOATMODE', 'ABSORBMODE', 'BULKMODE',
                                'BATSAVERMODE', 'EQMODE', 'CHARGEMODE']},
@@ -372,6 +372,7 @@ class handle_485_remote_data(threading.Thread):
             self.remote_dict[value.keys()[0]] = value[value.keys()[0]]
         for key, value in self.remote_dict.items():
             value['Current'] = value['Default']
+            value['Lock'] = False
             self.remote_data_list.append(value['Current'])
 
     def run(self):
@@ -436,6 +437,8 @@ class handle_485_remote_data(threading.Thread):
                                        retain=True)
                         print ('Remote/' + str(key) + '/Default ='
                                + str(value['Default']))
+                        if value['Lock'] is False:
+                            value['Current'] = value['Default']
                 else:
                     value['Current'] = int(message.payload)
                 print ('Current = ' + str(value['Current']))
@@ -511,6 +514,7 @@ class handle_inverter_ctrl(threading.Thread):
                 data['Current']), retain=True)
 
     def set_state(self, state, data):
+        print 'State is = ' + state
         if state is 'Inverter_State':
             self.remote_dict[state]['Current'] |= self.remote_dict[
                 state]['Lookup_Table']['Inverter_ON_OFF']
@@ -528,9 +532,26 @@ class handle_inverter_ctrl(threading.Thread):
                     'Current'] |= self.remote_dict[
                     'Inverter_State']['Lookup_Table']['Charger_ON_OFF']
             data['Retry_Count'] = 0
+        if state is 'Search_State':
+            data['Retry_Count'] = 0
+            print 'Search State'
+            if (data['Set'] is False):
+                print str(self.remote_dict['Search_watts']['Current'])
+                if self.remote_dict['Search_watts']['Current'] is not 0:
+                    self.remote_dict['Search_watts'][
+                        'Default'] = self.remote_dict['Search_watts'][
+                            'Current']
+                    self.remote_dict['Search_watts']['Current'] = 0
+                    self.remote_dict['Search_watts']['Lock'] = True
+            else:
+                self.remote_dict['Search_watts'][
+                    'Current'] = self.remote_dict['Search_watts'][
+                        'Default']
+                self.remote_dict['Search_watts']['Lock'] = False
         if state is 'Disable_AC_In':
             data['Retry_Count'] = 0
             if data['Set'] is True:
+                self.remote_dict['VAC_cut_out_voltage']['Lock'] = True
                 self.remote_dict['VAC_cut_out_voltage'][
                     'Default'] = self.remote_dict[
                     'VAC_cut_out_voltage']['Current']
@@ -538,6 +559,7 @@ class handle_inverter_ctrl(threading.Thread):
                     'Current'] = self.remote_dict['VAC_cut_out_voltage'][
                         'Lookup_Table']['EMS_over_ride_open_relay']
             else:
+                self.remote_dict['VAC_cut_out_voltage']['Lock'] = False
                 self.remote_dict['VAC_cut_out_voltage'][
                     'Current'] = self.remote_dict[
                     'VAC_cut_out_voltage']['Default']
