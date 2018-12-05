@@ -1,37 +1,10 @@
 {
-  "name": "inverterpi",
-  "description": "A Node-RED Project",
-  "version": "0.0.1",
-  "dependencies": {
-    "node-red-contrib-ibm-watson-iot": "^0.2.8",
-    "node-red-contrib-modbus": "~4.1.1",
-    "node-red-contrib-play-audio": "^2.3.2",
-    "node-red-contrib-simplejs": "0.0.4",
-    "node-red-dashboard": "~2.11.0",
-    "node-red-node-ledborg": "0.0.19",
-    "node-red-node-mysql": "0.0.16",
-    "node-red-node-pi-sense-hat": "0.0.16",
-    "node-red-node-ping": "0.0.15",
-    "node-red-node-random": "^0.1.0",
-    "node-red-node-serialport": "^0.6.7",
-    "node-red-node-smooth": "^0.1.0"
-  },
-  "main": "settings.js",
-  "directories": {
-    "lib": "lib"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/DJMHardware/Solar-Trailer.git"
-  },
-  "author": "Daniel McIlroy",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/DJMHardware/Solar-Trailer/issues"
-  },
-  "homepage": "https://github.com/DJMHardware/Solar-Trailer#readme"
+    "name": "node-red-project",
+    "description": "A Node-RED Project",
+    "version": "0.0.1",
+    "private": true,
+    "dependencies": {
+        "node-red-contrib-modbus": "~4.1.1",
+        "node-red-dashboard": "~2.11.0"
+    }
 }
