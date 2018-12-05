@@ -2,7 +2,7 @@
  "nodes": {
   "node-red": {
    "name": "node-red",
-   "version": "0.18.7",
+   "version": "0.19.5",
    "local": false,
    "nodes": {
     "sentiment": {
@@ -372,164 +372,6 @@
     }
    }
   },
-  "node-red-contrib-ibm-watson-iot": {
-   "name": "node-red-contrib-ibm-watson-iot",
-   "version": "0.2.8",
-   "local": true,
-   "nodes": {
-    "wiotp": {
-     "name": "wiotp",
-     "types": [
-      "wiotp-credentials",
-      "wiotp in",
-      "wiotp out"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-ibm-watson-iot",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-ibm-watson-iot/application/wiotp.js"
-    }
-   }
-  },
-  "node-red-node-smooth": {
-   "name": "node-red-node-smooth",
-   "version": "0.1.0",
-   "local": true,
-   "nodes": {
-    "smooth": {
-     "name": "smooth",
-     "types": [
-      "smooth"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-smooth",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-smooth/17-smooth.js"
-    }
-   }
-  },
-  "node-red-node-rbe": {
-   "name": "node-red-node-rbe",
-   "version": "0.2.3",
-   "local": false,
-   "nodes": {
-    "rbe": {
-     "name": "rbe",
-     "types": [
-      "rbe"
-     ],
-     "enabled": true,
-     "local": false,
-     "module": "node-red-node-rbe",
-     "file": "/usr/lib/node_modules/node-red/node_modules/node-red-node-rbe/rbe.js"
-    }
-   }
-  },
-  "node-red-contrib-play-audio": {
-   "name": "node-red-contrib-play-audio",
-   "version": "2.3.2",
-   "local": true,
-   "nodes": {
-    "play-audio": {
-     "name": "play-audio",
-     "types": [
-      "play audio"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-play-audio",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-play-audio/play-audio.js"
-    }
-   }
-  },
-  "node-red-node-ledborg": {
-   "name": "node-red-node-ledborg",
-   "version": "0.0.19",
-   "local": true,
-   "nodes": {
-    "ledborg": {
-     "name": "ledborg",
-     "types": [
-      "ledborg"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-ledborg",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-ledborg/78-ledborg.js"
-    }
-   }
-  },
-  "node-red-node-pi-sense-hat": {
-   "name": "node-red-node-pi-sense-hat",
-   "version": "0.0.16",
-   "local": true,
-   "nodes": {
-    "sensehat": {
-     "name": "sensehat",
-     "types": [
-      "rpi-sensehat in",
-      "rpi-sensehat out"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-pi-sense-hat",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-pi-sense-hat/sensehat.js"
-    }
-   }
-  },
-  "node-red-node-ping": {
-   "name": "node-red-node-ping",
-   "version": "0.0.15",
-   "local": true,
-   "nodes": {
-    "ping": {
-     "name": "ping",
-     "types": [
-      "ping"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-ping",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-ping/88-ping.js"
-    }
-   }
-  },
-  "node-red-node-random": {
-   "name": "node-red-node-random",
-   "version": "0.1.0",
-   "local": true,
-   "nodes": {
-    "random": {
-     "name": "random",
-     "types": [
-      "random"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-random",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-random/random.js"
-    }
-   }
-  },
-  "node-red-node-serialport": {
-   "name": "node-red-node-serialport",
-   "version": "0.6.7",
-   "local": true,
-   "nodes": {
-    "serialport": {
-     "name": "serialport",
-     "types": [
-      "serial in",
-      "serial out",
-      "serial-port"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-serialport",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-serialport/25-serial.js"
-    }
-   }
-  },
   "node-red-node-email": {
    "name": "node-red-node-email",
    "version": "0.1.29",
@@ -550,7 +392,7 @@
   },
   "node-red-node-feedparser": {
    "name": "node-red-node-feedparser",
-   "version": "0.1.12",
+   "version": "0.1.14",
    "local": false,
    "nodes": {
     "feedparse": {
@@ -565,9 +407,26 @@
     }
    }
   },
+  "node-red-node-rbe": {
+   "name": "node-red-node-rbe",
+   "version": "0.2.4",
+   "local": false,
+   "nodes": {
+    "rbe": {
+     "name": "rbe",
+     "types": [
+      "rbe"
+     ],
+     "enabled": true,
+     "local": false,
+     "module": "node-red-node-rbe",
+     "file": "/usr/lib/node_modules/node-red/node_modules/node-red-node-rbe/rbe.js"
+    }
+   }
+  },
   "node-red-node-twitter": {
    "name": "node-red-node-twitter",
-   "version": "1.0.1",
+   "version": "1.1.4",
    "local": false,
    "nodes": {
     "twitter": {
@@ -584,166 +443,10 @@
     }
    }
   },
-  "node-red-contrib-modbus": {
-   "name": "node-red-contrib-modbus",
-   "version": "4.0.0",
-   "local": true,
-   "nodes": {
-    "Modbus-Client": {
-     "name": "Modbus-Client",
-     "types": [
-      "modbus-client"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-client.js"
-    },
-    "Modbus-Response": {
-     "name": "Modbus-Response",
-     "types": [
-      "modbus-response"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-response.js"
-    },
-    "Modbus-Read": {
-     "name": "Modbus-Read",
-     "types": [
-      "modbus-read"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-read.js"
-    },
-    "Modbus-Getter": {
-     "name": "Modbus-Getter",
-     "types": [
-      "modbus-getter"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-getter.js"
-    },
-    "Modbus-Flex-Getter": {
-     "name": "Modbus-Flex-Getter",
-     "types": [
-      "modbus-flex-getter"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-flex-getter.js"
-    },
-    "Modbus-Write": {
-     "name": "Modbus-Write",
-     "types": [
-      "modbus-write"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-write.js"
-    },
-    "Modbus-Flex-Write": {
-     "name": "Modbus-Flex-Write",
-     "types": [
-      "modbus-flex-write"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-flex-write.js"
-    },
-    "Modbus-Server": {
-     "name": "Modbus-Server",
-     "types": [
-      "modbus-server"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-server.js"
-    },
-    "Modbus-Flex-Server": {
-     "name": "Modbus-Flex-Server",
-     "types": [
-      "modbus-flex-server"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-flex-server.js"
-    },
-    "Modbus-Queue-Info": {
-     "name": "Modbus-Queue-Info",
-     "types": [
-      "modbus-queue-info"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-queue-info.js"
-    },
-    "Modbus-Flex-Connector": {
-     "name": "Modbus-Flex-Connector",
-     "types": [
-      "modbus-flex-connector"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-flex-connector.js"
-    },
-    "Modbus-IO-Config": {
-     "name": "Modbus-IO-Config",
-     "types": [
-      "modbus-io-config"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-io-config.js"
-    },
-    "Modbus-Response-Filter": {
-     "name": "Modbus-Response-Filter",
-     "types": [
-      "modbus-response-filter"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-contrib-modbus",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-response-filter.js"
-    }
-   },
-   "pending_version": "4.1.1"
-  },
-  "node-red-node-mysql": {
-   "name": "node-red-node-mysql",
-   "version": "0.0.16",
-   "local": true,
-   "nodes": {
-    "mysql": {
-     "name": "mysql",
-     "types": [
-      "MySQLdatabase",
-      "mysql"
-     ],
-     "enabled": true,
-     "local": true,
-     "module": "node-red-node-mysql",
-     "file": "/home/pi/.node-red/node_modules/node-red-node-mysql/68-mysql.js"
-    }
-   }
-  },
   "node-red-dashboard": {
    "name": "node-red-dashboard",
    "version": "2.11.0",
-   "local": true,
+   "local": false,
    "nodes": {
     "ui_base": {
      "name": "ui_base",
@@ -753,7 +456,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_base.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_base.js"
     },
     "ui_button": {
      "name": "ui_button",
@@ -763,7 +466,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_button.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_button.js"
     },
     "ui_dropdown": {
      "name": "ui_dropdown",
@@ -773,7 +476,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_dropdown.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_dropdown.js"
     },
     "ui_switch": {
      "name": "ui_switch",
@@ -783,7 +486,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_switch.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_switch.js"
     },
     "ui_slider": {
      "name": "ui_slider",
@@ -793,7 +496,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_slider.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_slider.js"
     },
     "ui_numeric": {
      "name": "ui_numeric",
@@ -803,7 +506,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_numeric.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_numeric.js"
     },
     "ui_text_input": {
      "name": "ui_text_input",
@@ -813,7 +516,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_text_input.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_text_input.js"
     },
     "ui_date_picker": {
      "name": "ui_date_picker",
@@ -823,7 +526,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_date_picker.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_date_picker.js"
     },
     "ui_colour_picker": {
      "name": "ui_colour_picker",
@@ -833,7 +536,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_colour_picker.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_colour_picker.js"
     },
     "ui_form": {
      "name": "ui_form",
@@ -843,7 +546,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_form.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_form.js"
     },
     "ui_text": {
      "name": "ui_text",
@@ -853,7 +556,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_text.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_text.js"
     },
     "ui_gauge": {
      "name": "ui_gauge",
@@ -863,7 +566,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_gauge.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_gauge.js"
     },
     "ui_chart": {
      "name": "ui_chart",
@@ -873,7 +576,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_chart.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_chart.js"
     },
     "ui_audio": {
      "name": "ui_audio",
@@ -883,7 +586,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_audio.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_audio.js"
     },
     "ui_toast": {
      "name": "ui_toast",
@@ -893,7 +596,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_toast.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_toast.js"
     },
     "ui_ui_control": {
      "name": "ui_ui_control",
@@ -903,7 +606,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_ui_control.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_ui_control.js"
     },
     "ui_template": {
      "name": "ui_template",
@@ -913,7 +616,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_template.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_template.js"
     },
     "ui_link": {
      "name": "ui_link",
@@ -923,7 +626,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_link.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_link.js"
     },
     "ui_tab": {
      "name": "ui_tab",
@@ -933,7 +636,7 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_tab.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_tab.js"
     },
     "ui_group": {
      "name": "ui_group",
@@ -943,29 +646,149 @@
      "enabled": true,
      "local": true,
      "module": "node-red-dashboard",
-     "file": "/home/pi/.node-red/node_modules/node-red-dashboard/nodes/ui_group.js"
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-dashboard/nodes/ui_group.js"
     }
    }
   },
-  "node-red-contrib-simplejs": {
-   "name": "node-red-contrib-simplejs",
-   "version": "0.0.4",
-   "local": true,
+  "node-red-contrib-modbus": {
+   "name": "node-red-contrib-modbus",
+   "version": "4.1.1",
+   "local": false,
    "nodes": {
-    "simplejs": {
-     "name": "simplejs",
+    "Modbus-Client": {
+     "name": "Modbus-Client",
      "types": [
-      "simplejs"
+      "modbus-client"
      ],
      "enabled": true,
      "local": true,
-     "module": "node-red-contrib-simplejs",
-     "file": "/home/pi/.node-red/node_modules/node-red-contrib-simplejs/simplejs/simplejs.js"
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-client.js"
+    },
+    "Modbus-Response": {
+     "name": "Modbus-Response",
+     "types": [
+      "modbus-response"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-response.js"
+    },
+    "Modbus-Read": {
+     "name": "Modbus-Read",
+     "types": [
+      "modbus-read"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-read.js"
+    },
+    "Modbus-Getter": {
+     "name": "Modbus-Getter",
+     "types": [
+      "modbus-getter"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-getter.js"
+    },
+    "Modbus-Flex-Getter": {
+     "name": "Modbus-Flex-Getter",
+     "types": [
+      "modbus-flex-getter"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-flex-getter.js"
+    },
+    "Modbus-Write": {
+     "name": "Modbus-Write",
+     "types": [
+      "modbus-write"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-write.js"
+    },
+    "Modbus-Flex-Write": {
+     "name": "Modbus-Flex-Write",
+     "types": [
+      "modbus-flex-write"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-flex-write.js"
+    },
+    "Modbus-Server": {
+     "name": "Modbus-Server",
+     "types": [
+      "modbus-server"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-server.js"
+    },
+    "Modbus-Flex-Server": {
+     "name": "Modbus-Flex-Server",
+     "types": [
+      "modbus-flex-server"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-flex-server.js"
+    },
+    "Modbus-Queue-Info": {
+     "name": "Modbus-Queue-Info",
+     "types": [
+      "modbus-queue-info"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-queue-info.js"
+    },
+    "Modbus-Flex-Connector": {
+     "name": "Modbus-Flex-Connector",
+     "types": [
+      "modbus-flex-connector"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-flex-connector.js"
+    },
+    "Modbus-IO-Config": {
+     "name": "Modbus-IO-Config",
+     "types": [
+      "modbus-io-config"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-io-config.js"
+    },
+    "Modbus-Response-Filter": {
+     "name": "Modbus-Response-Filter",
+     "types": [
+      "modbus-response-filter"
+     ],
+     "enabled": true,
+     "local": true,
+     "module": "node-red-contrib-modbus",
+     "file": "/home/pi/Solar-Trailer/nodered/node_modules/node-red-contrib-modbus/modbus/modbus-response-filter.js"
     }
    }
   }
  },
- "_credentialSecret": "415c63fb898dfada350eadbf55e7fa0fc4178e25c9b22930864bf6ede46f2050",
+ "_credentialSecret": "3c568b01e31184e058769dccfee4d58c094c87c9ec516121061b24ffc50180b0",
  "users": {
   "_": {
    "editor": {
@@ -973,11 +796,10 @@
      "view-grid-size": "20",
      "view-node-status": true,
      "view-show-tips": true,
-     "view-snap-grid": true,
-     "view-show-grid": true
+     "view-snap-grid": false,
+     "view-show-grid": false
     }
-   },
-   "menu-menu-item-sidebar": true
+   }
   }
  }
 }

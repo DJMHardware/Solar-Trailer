@@ -586,7 +586,7 @@
   },
   "node-red-contrib-modbus": {
    "name": "node-red-contrib-modbus",
-   "version": "4.0.0",
+   "version": "3.6.1",
    "local": true,
    "nodes": {
     "Modbus-Client": {
@@ -719,8 +719,7 @@
      "module": "node-red-contrib-modbus",
      "file": "/home/pi/.node-red/node_modules/node-red-contrib-modbus/modbus/modbus-response-filter.js"
     }
-   },
-   "pending_version": "4.1.1"
+   }
   },
   "node-red-node-mysql": {
    "name": "node-red-node-mysql",
@@ -742,7 +741,7 @@
   },
   "node-red-dashboard": {
    "name": "node-red-dashboard",
-   "version": "2.11.0",
+   "version": "2.9.4",
    "local": true,
    "nodes": {
     "ui_base": {
@@ -972,12 +971,12 @@
     "view": {
      "view-grid-size": "20",
      "view-node-status": true,
-     "view-show-tips": true,
-     "view-snap-grid": true,
-     "view-show-grid": true
+     "view-show-tips": false,
+     "view-snap-grid": false,
+     "view-show-grid": false
     }
    },
-   "menu-menu-item-sidebar": true
+   "menu-menu-item-sidebar": false
   }
  }
 }
