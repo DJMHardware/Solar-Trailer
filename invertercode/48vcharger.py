@@ -1,6 +1,6 @@
 import threading
 import paho.mqtt.client as mqtt
-# import sys
+import sys
 # sys.path.append(r'/home/pi/pysrc')
 # sys.setrecursionlimit(200000)
 # import pydevd
@@ -8,6 +8,18 @@ import paho.mqtt.client as mqtt
 import time
 import serial
 from __builtin__ import str
+import toml
+import os.path
+
+config_path = os.path.join((os.path.split(os.path.split(sys.argv[0])[0])[0]),
+                           'config/48vcharger.toml')
+with open(config_path) as f:
+    config = toml.load(f, _dict=dict)
+print config_path
+print config['uarts']
+for key, value in config[u'uarts'].items():
+    print key + ' = ' + value['dev']
+
 
 
 class handle_control(threading.Thread):
@@ -21,7 +33,7 @@ class handle_control(threading.Thread):
             self.get_data()
 
 
-class handle_uart(threading.Thread, handle_control):
+class handle_uart(handle_control):
     def __init__(self, threadID):
         threading.Thread.__init__(self)
         self.threadID = threadID

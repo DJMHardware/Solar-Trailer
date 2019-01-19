@@ -1,0 +1,9 @@
+# This is a TOML document.
+
+title = "48v Charger configuration"
+
+[uarts]
+0 = { phy = 0, dev = "/dev/ttyUSB3"}
+1 = { phy = 0, dev = "/dev/ttyUSB4"}
+2 = { phy = 1, dev = "/dev/ttyUSB5"}
+3 = { phy = 1, dev = "/dev/ttyUSB6"}
