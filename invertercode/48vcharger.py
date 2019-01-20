@@ -27,21 +27,40 @@ class handle_control(threading.Thread):
         self.threadID = threadID
         self.init_handle_uart()
 
+    def init_handle_uart(self):
+        print 'init control'
+        self.handle_uart_t = {}
+        for key, value in config['uarts'].items():
+            handle_uart_t = handle_uart(key, value)
+            self.handle_uart_t[key] = handle_uart_t
+            self.handle_uart_t[key].daemon = True
+            self.handle_uart_t[key].start()
+
     def run(self):
         while True:
-            self.get_data()
+            print 'run control'
+            time.sleep(1)
 
 
 class handle_uart(handle_control):
-    def __init__(self, threadID):
+    def __init__(self, threadID, value):
         threading.Thread.__init__(self)
         self.threadID = threadID
-        self.ser = serial.Serial("/dev/ttyUSB1", baudrate=9600, bytesize=8,
-                                 parity='E', stopbits=1, timeout=0.1)
-        self.key = 0xF007
-        self.reply_new = False
-        self.serial_io()
+        self.dev = value['dev']
+        print 'init ' + self.dev
+    # self.ser = serial.Serial("/dev/ttyUSB1", baudrate=9600, bytesize=8,
+    #                             parity='E', stopbits=1, timeout=0.1)
 
     def run(self):
         while True:
-            self.get_data()
+            print 'read ' + self.dev
+            time.sleep(1)
+
+
+threadLock = threading.Lock()
+handle_control_t = handle_control('control')
+handle_control_t.daemon = True
+handle_control_t.start()
+
+while True:
+    time.sleep(1)
