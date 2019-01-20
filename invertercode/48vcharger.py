@@ -17,9 +17,8 @@ with open(config_path) as f:
     config = toml.load(f, _dict=dict)
 print config_path
 print config['uarts']
-for key, value in config[u'uarts'].items():
+for key, value in config['uarts'].items():
     print key + ' = ' + value['dev']
-
 
 
 class handle_control(threading.Thread):
