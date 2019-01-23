@@ -48,8 +48,8 @@ class handle_uart(handle_control):
         self.threadID = threadID
         self.dev = value['dev']
         print 'init ' + self.dev
-    # self.ser = serial.Serial("/dev/ttyUSB1", baudrate=9600, bytesize=8,
-    #                             parity='E', stopbits=1, timeout=0.1)
+        self.ser = serial.Serial(self.dev, baudrate=4800, bytesize=8,
+                                 parity='N', stopbits=1, timeout=0.1)
 
     def run(self):
         while True:

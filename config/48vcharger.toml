@@ -3,7 +3,16 @@
 title = "48v Charger configuration"
 
 [uarts]
-uart0 = { phy = 0, dev = "/dev/ttyUSB3"}
+#uart0 = { phy = 0, dev = "/dev/ttyUSB3"}
 uart1 = { phy = 0, dev = "/dev/ttyUSB4"}
-uart2 = { phy = 1, dev = "/dev/ttyUSB5"}
-uart3 = { phy = 1, dev = "/dev/ttyUSB6"}
+#uart2 = { phy = 1, dev = "/dev/ttyUSB5"}
+#uart3 = { phy = 1, dev = "/dev/ttyUSB6"}
+
+[address]
+control = 'a'
+
+[control_write]
+set_voltage = { cmd = 'wu', len = 4, min = 0, max = 6000 }
+
+[control_read]
+read_actual_voltage = { cmd = 'ru' }
