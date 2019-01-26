@@ -56,18 +56,36 @@ class handle_uart(handle_control):
     def run(self):
         while True:
             print 'read ' + self.dev
-            self.send_command(config['control_read']['read_actual_voltage'])
+            self.send_command(config['command']['set_voltage'], 3.30)
+            self.send_command(config['command']['set_current'], 2.30)
+            self.send_command(config['command']['set_output'], 1)
+            self.send_command(config['command']['set_auto_output'], 1)
+            self.send_command(config['command']['read_actual_voltage'])
+            self.send_command(config['command']['read_actual_current'])
+            self.send_command(config['command']['read_set_voltage'])
+            self.send_command(config['command']['read_set_current'])
+            self.send_command(config['command']['read_output_state'])
             time.sleep(1)
 
-    def send_command(self, command):
+    def send_command(self, command, value=None):
         while (self.ser.out_waiting > 0 and self.ser.in_waiting > 0
                and self.busy):
             time.sleep(0.01)
         self.busy = True
-        self.ser.write((self.address + command['cmd'] + '\r\n').encode())
-        print 'sent'
-        if command['return'] is True:
-            self.read_reply(command)
+        formatedvalue = ''
+        if command['format'] is not False:
+            if command['scale'] is not 1:
+                value = int(round(value * command['scale']))
+            if value < command['min']:
+                value = command['min']
+            if value > command['max']:
+                value = command['max']
+            formatedvalue = command['format'].format(value)
+        output = (self.address + command['cmd']
+                  + formatedvalue + '\r\n').encode()
+        self.ser.write(output)
+        print 'sent = ' + str(output.strip('\r\n'))
+        self.read_reply(command)
         self.busy = False
 
     def read_reply(self, command):
@@ -82,13 +100,20 @@ class handle_uart(handle_control):
                         endofline = True
                 else:
                     returned_value += value
-        time.sleep(0.01)
-        print 'return = ' + returned_value
+            else:
+                time.sleep(0.01)
         regex = "^#" + command['cmd'] + command['regex']
-        print 'regex = ' + regex
         if re.match(regex, returned_value):
             value = re.findall(command['regex'], returned_value)
+            if command['regex'] != value[0]:
+                value = int(value[0])
+                if command['scale'] is not 1:
+                    value = float(value) / command['scale']
+            else:
+                value = str(value[0])
             print 'value = ' + str(value)
+        else:
+            print 'error returned value bad = ' + str(returned_value)
 
 
 threadLock = threading.Lock()

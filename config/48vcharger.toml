@@ -11,8 +11,78 @@ uart1 = { phy = 0, dev = "/dev/ttyUSB0"}
 [address]
 control = 'a'
 
-[control_write]
-set_voltage = { cmd = 'wu', len = 4, min = 0, max = 6000, return = false}
+[command]
 
-[control_read]
-read_actual_voltage = { cmd = 'ru', return = true, regex = '\d{11}'}
+  [command.set_voltage]
+  cmd = 'wu'
+  min = 0
+  max = 6000
+  scale = 100
+  format = '{:04d}'
+  regex = 'ok'
+
+  [command.set_current]
+  cmd = 'wi'
+  min = 0
+  max = 1200
+  scale = 100
+  format = '{:04d}'
+  regex = 'ok'
+
+  [command.set_output]
+  cmd = 'wo'
+  min = 0
+  max = 1
+  scale = 1
+  format = '{:d}'
+  regex = 'ok'
+
+  [command.set_auto_output]
+  cmd = 'wy'
+  min = 0
+  max = 1
+  scale = 1
+  format = '{:d}'
+  regex = 'ok'
+
+  [command.read_actual_voltage]
+  cmd = 'ru'
+  scale = 100
+  format = false
+  regex = '\d{11}'
+
+  [command.read_actual_current]
+  cmd = 'ri'
+  scale = 100
+  format = false
+  regex = '\d{11}'
+
+  [command.read_actual_working_time]
+  cmd = 'rt'
+  scale = 1
+  format = false
+  regex = '\d{11}'
+
+  [command.read_actual_output_capacity]
+  cmd = 'rc'
+  scale = 100
+  format = false
+  regex = '\d{11}'
+
+  [command.read_set_voltage]
+  cmd = 'rv'
+  scale = 100
+  format = false
+  regex = '\d{11}'
+
+  [command.read_set_current]
+  cmd = 'ra'
+  scale = 100
+  format = false
+  regex = '\d{11}'
+
+  [command.read_output_state]
+  cmd = 'ro'
+  scale = 1
+  format = false
+  regex = '\d{11}'
