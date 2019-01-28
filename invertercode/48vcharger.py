@@ -17,7 +17,7 @@ config_path = os.path.join((os.path.split(os.path.split(sys.argv[0])[0])[0]),
 with open(config_path) as f:
     config = toml.load(f, _dict=dict)
 print config_path
-print config['uarts']
+# print config['uarts']
 for key, value in config['uarts'].items():
     print key + ' = ' + value['dev']
 
