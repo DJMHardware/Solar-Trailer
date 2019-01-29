@@ -71,17 +71,6 @@ class handle_uart(handle_control):
 
     def send_command(self, command_name, value=None):
         command = config['command'][command_name]
-        timeout = 0
-        while (self.ser.out_waiting > 0 and self.ser.in_waiting > 0
-               and self.busy):
-            timeout += 1
-            if timeout > 20 and not self.busy:
-                print 'serial write timeout ' + str(self.dev)
-                self.ser.reset_output_buffer()
-                self.ser.reset_input_buffer()
-                timeout = 0
-            time.sleep(0.01)
-        self.busy = True
         formatedvalue = ''
         if command['format'] is not False:
             if command['scale'] is not 1:
@@ -91,14 +80,36 @@ class handle_uart(handle_control):
             if value > command['max']:
                 value = command['max']
             formatedvalue = command['format'].format(value)
-        output = (self.address + command['cmd']
-                  + formatedvalue + '\r\n').encode()
-        self.ser.write(output)
-        print 'sent = ' + str(re.sub('\n|\r', '', output))
-        self.read_reply(command)
-        self.busy = False
+        reply = self.uart_IO(self.address + command['cmd']
+                             + formatedvalue + '\r\n')
+        regex = "^#" + command['cmd'] + command['regex']
+        if re.match(regex, reply):
+            value = re.findall(command['regex'], reply)
+            if command['regex'] != value[0]:
+                value = int(value[0])
+                if command['scale'] is not 1:
+                    value = float(value) / command['scale']
+            else:
+                value = str(value[0])
+            print 'value = ' + str(value)
+            return(value)
+        else:
+            raise Exception('error uart returned bad string = ' + str(reply))
 
-    def read_reply(self, command):
+    def uart_IO(self, output):
+        timeout = 0
+        while (self.ser.out_waiting > 0 and self.ser.in_waiting > 0
+               and self.busy):
+            timeout += 1
+            if timeout > 20 and not self.busy:
+                self.ser.reset_output_buffer()
+                self.ser.reset_input_buffer()
+                timeout = 0
+                raise Exception('serial write timeout ' + str(self.dev))
+            time.sleep(0.01)
+        self.busy = True
+        self.ser.write(output.encode())
+        print 'sent = ' + str(re.sub('\n|\r', '', output))
         endofline = False
         timeout = 0
         reply = ''
@@ -111,21 +122,11 @@ class handle_uart(handle_control):
             else:
                 timeout += 1
                 if timeout > 20:
-                    print 'serial read timeout ' + str(self.dev)
                     endofline = True
+                    raise Exception('serial read timeout ' + str(self.dev))
                 time.sleep(0.01)
-        regex = "^#" + command['cmd'] + command['regex']
-        if re.match(regex, reply):
-            value = re.findall(command['regex'], reply)
-            if command['regex'] != value[0]:
-                value = int(value[0])
-                if command['scale'] is not 1:
-                    value = float(value) / command['scale']
-            else:
-                value = str(value[0])
-            print 'value = ' + str(value)
-        else:
-            print 'error returned value bad = ' + str(reply)
+        self.busy = False
+        return(reply)
 
 
 threadLock = threading.Lock()
