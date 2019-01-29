@@ -52,24 +52,34 @@ class handle_uart(handle_control):
         print 'init ' + self.dev
         self.ser = serial.Serial(self.dev, baudrate=4800, bytesize=8,
                                  parity='N', stopbits=1, timeout=0)
+        self.busy = False
 
     def run(self):
         while True:
             print 'read ' + self.dev
-            self.send_command(config['command']['set_voltage'], 3.30)
-            self.send_command(config['command']['set_current'], 2.30)
-            self.send_command(config['command']['set_output'], 1)
-            self.send_command(config['command']['set_auto_output'], 1)
-            self.send_command(config['command']['read_actual_voltage'])
-            self.send_command(config['command']['read_actual_current'])
-            self.send_command(config['command']['read_set_voltage'])
-            self.send_command(config['command']['read_set_current'])
-            self.send_command(config['command']['read_output_state'])
+            self.send_command('set_voltage', 3.30)
+            self.send_command('set_current', 2.30)
+            self.send_command('set_output', 1)
+            self.send_command('set_auto_output', 1)
+            self.send_command('read_actual_voltage')
+            self.send_command('read_actual_current')
+            self.send_command('read_set_voltage')
+            self.send_command('read_set_current')
+            self.send_command('read_output_state')
+            self.send_command('read_actual_output_capacity')
             time.sleep(1)
 
-    def send_command(self, command, value=None):
+    def send_command(self, command_name, value=None):
+        command = config['command'][command_name]
+        timeout = 0
         while (self.ser.out_waiting > 0 and self.ser.in_waiting > 0
                and self.busy):
+            timeout += 1
+            if timeout > 20 and not self.busy:
+                print 'serial write timeout ' + str(self.dev)
+                self.ser.reset_output_buffer()
+                self.ser.reset_input_buffer()
+                timeout = 0
             time.sleep(0.01)
         self.busy = True
         formatedvalue = ''
@@ -84,27 +94,29 @@ class handle_uart(handle_control):
         output = (self.address + command['cmd']
                   + formatedvalue + '\r\n').encode()
         self.ser.write(output)
-        print 'sent = ' + str(output.strip('\r\n'))
+        print 'sent = ' + str(re.sub('\n|\r', '', output))
         self.read_reply(command)
         self.busy = False
 
     def read_reply(self, command):
         endofline = False
-        returned_value = ''
+        timeout = 0
+        reply = ''
         while not endofline:
             if self.ser.in_waiting > 0:
-                value = self.ser.read()
-                test = int(value[0].encode("hex"), 16)
-                if test is 0x0d or test is 0x0a:
-                    if test is 0x0a:
-                        endofline = True
-                else:
-                    returned_value += value
+                reply_stream = self.ser.read()
+                reply += re.sub('\n|\r', '', reply_stream)
+                if re.match('\n', reply_stream):
+                    endofline = True
             else:
+                timeout += 1
+                if timeout > 20:
+                    print 'serial read timeout ' + str(self.dev)
+                    endofline = True
                 time.sleep(0.01)
         regex = "^#" + command['cmd'] + command['regex']
-        if re.match(regex, returned_value):
-            value = re.findall(command['regex'], returned_value)
+        if re.match(regex, reply):
+            value = re.findall(command['regex'], reply)
             if command['regex'] != value[0]:
                 value = int(value[0])
                 if command['scale'] is not 1:
@@ -113,7 +125,7 @@ class handle_uart(handle_control):
                 value = str(value[0])
             print 'value = ' + str(value)
         else:
-            print 'error returned value bad = ' + str(returned_value)
+            print 'error returned value bad = ' + str(reply)
 
 
 threadLock = threading.Lock()
