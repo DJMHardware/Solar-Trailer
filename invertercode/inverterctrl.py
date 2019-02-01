@@ -3,18 +3,11 @@
 import threading
 import paho.mqtt.client as mqtt
 import RPi.GPIO as GPIO
-# import sys
-# sys.path.append(r'/home/pi/pysrc')
-# sys.setrecursionlimit(200000)
-# import pydevd
-# pydevd.settrace('192.168.1.145')
 import time
 import serial
 import struct
-import binascii
 import json
 from collections import namedtuple
-from __builtin__ import str
 
 
 # Create a formated stucture for the the byte stream from inverter
@@ -241,7 +234,6 @@ class handle_485(threading.Thread):
         x_string = ''
         while True:
             t_old = time.time()
-            x_string_start_t = time.time()
             read_loop = True
             while read_loop:
                 x = self.ser.read(1)
@@ -249,21 +241,15 @@ class handle_485(threading.Thread):
                 t_change = t - t_old
                 if x != '':
                     t_old = t
-                    # print str(t_change) + ' : '+ binascii.hexlify(x)
                 if t_change > 0.03:
                     x_string = ''
-                    x_string_start_t = t
                 if len(x_string) == 21:
                     threadLock.acquire()
                     if x_string != self.inverter_bytestream:
                         self.inverter_bytestream = x_string
                         self.inverter_bytestream_flag = True
                     read_loop = False
-                    # print (binascii.hexlify(self.inverter_bytestream))
-                    # print ('end of inverter read time'
-                    #       + str(time.time()-x_string_start_t))
                     threadLock.release()
-                    # print (str(t_change))
                 x_string = x_string + x
             GPIO.output(17, GPIO.HIGH)
             time.sleep(0.01)
@@ -280,7 +266,6 @@ class handle_485(threading.Thread):
             time.sleep(0.01)
             GPIO.output(17, GPIO.LOW)
 
-                # self.ser.flush()
 
 # convert inverter bytestream to structured list to namedtuple
 #  then finally to a named dict so can be decoded and scaled

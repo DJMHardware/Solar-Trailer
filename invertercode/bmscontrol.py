@@ -2,19 +2,10 @@
 
 import threading
 import paho.mqtt.client as mqtt
-# import sys
-# sys.path.append(r'/home/pi/pysrc')
-# sys.setrecursionlimit(200000)
-# import pydevd
-# pydevd.settrace('192.168.1.145')
 import time
 import serial
 import re
-import struct
-import binascii
 import json
-from collections import namedtuple
-from __builtin__ import str
 
 
 bms_dict = {

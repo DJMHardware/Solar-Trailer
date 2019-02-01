@@ -7,7 +7,7 @@ import sys
 # pydevd.settrace('192.168.1.145')
 import time
 import serial
-from __builtin__ import str
+# from __builtin__ import str
 import toml
 import os.path
 import re
@@ -60,7 +60,7 @@ class handle_control(threading.Thread):
                 if config['command'][v['command']]['regex'] != 'ok':
                     self.publish_to_mqtt(v)
                 else:
-                    print ('command ' + v['command'] + 'returned ok')
+                    print ('command ' + v['command'] + '\nreturned ok')
                 self.command_list.remove(v)
 
     def publish_to_mqtt(self, value):
