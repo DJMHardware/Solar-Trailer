@@ -5,21 +5,13 @@ import sys
 # sys.setrecursionlimit(200000)
 # import pydevd
 # pydevd.settrace('192.168.1.145')
+import paho.mqtt.client as mqtt
 import time
 import serial
 # from __builtin__ import str
 import toml
 import os.path
 import re
-
-config_path = os.path.join((os.path.split(os.path.split(sys.argv[0])[0])[0]),
-                           'config/48vcharger.toml')
-with open(config_path) as f:
-    config = toml.load(f, _dict=dict)
-print (config_path)
-# print config['uarts']
-for key, value in config['uarts'].items():
-    print (key + ' = ' + value['dev'])
 
 
 class handle_control(threading.Thread):
@@ -28,6 +20,8 @@ class handle_control(threading.Thread):
         self.threadID = threadID
         self.command_list = []
         self.phy_list = {}
+        client.subscribe([((config['mqtt']['topic'] + '/+/send'), 0)])
+        client.on_message = self.mqtt_on_message
         self.init_handle_uart()
 
     def init_handle_uart(self):
@@ -66,15 +60,23 @@ class handle_control(threading.Thread):
     def publish_to_mqtt(self, value):
         return
 
+    def mqtt_on_message(self, client, userdata, message):
+        topic = message.topic.split('/')
+        print ('topic = ' + str(topic[1]))
+        print ('message received = ' + message.payload)
+        if topic[1] in config['command']:
+            command = config['command'][topic[1]]
+            if command['format'] is False:
+                self.command(topic[1])
+            else:
+                if command['scale'] == 1:
+                    print (int(message.payload))
+                    self.command(topic[1], int(message.payload))
+                else:
+                    self.command(topic[1], float(message.payload))
+
     def run(self):
         print (self.phy_list)
-        self.command('set_voltage', 12)
-        self.command('set_current', .5)
-        self.command('set_output', 1)
-        self.command('set_auto_output', 0)
-        self.command('read_set_voltage')
-        self.command('read_set_current')
-        self.command('read_output_state')
         while True:
             value = self.check_command_reply()
             print ('run control ' + str(value))
@@ -97,11 +99,6 @@ class handle_uart(threading.Thread):
         while True:
             self.check_command_queue()
             time.sleep(.01)
-        while True:
-            self.send_command('read_actual_voltage')
-            self.send_command('read_actual_current')
-            self.send_command('read_actual_output_capacity')
-            time.sleep(1)
 
     def check_command_queue(self):
             for v in self.control.command_list:
@@ -187,6 +184,20 @@ class handle_uart(threading.Thread):
                 time.sleep(0.01)
         self.busy = False
         return(reply)
+
+
+config_path = os.path.join((os.path.split(os.path.split(sys.argv[0])[0])[0]),
+                           'config/48vcharger.toml')
+with open(config_path) as f:
+    config = toml.load(f, _dict=dict)
+print (config_path)
+# print config['uarts']
+for key, value in config['uarts'].items():
+    print (key + ' = ' + value['dev'])
+
+client = mqtt.Client(config['mqtt']['client'])
+client.connect(config['mqtt']['host'])
+client.loop_start()
 
 
 threadLock = threading.Lock()

@@ -8,6 +8,11 @@ uart1 = { phy = 0, dev = "/dev/ttyUSB1"}
 uart2 = { phy = 1, dev = "/dev/ttyUSB2"}
 uart3 = { phy = 1, dev = "/dev/ttyUSB3"}
 
+[mqtt]
+client = '48vCharger_py'
+host = 'inverterpi'
+topic = '48vCharger'
+
 [address]
 control = 'a'
 
