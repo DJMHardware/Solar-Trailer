@@ -3,10 +3,10 @@
 title = "48v Charger configuration"
 
 [uarts]
-#uart0 = { phy = 0, dev = "/dev/ttyUSB3"}
+uart0 = { phy = 0, dev = "/dev/ttyUSB0"}
 uart1 = { phy = 0, dev = "/dev/ttyUSB1"}
-uart2 = { phy = 1, dev = "/dev/ttyUSB0"}
-#uart3 = { phy = 1, dev = "/dev/ttyUSB6"}
+uart2 = { phy = 1, dev = "/dev/ttyUSB2"}
+uart3 = { phy = 1, dev = "/dev/ttyUSB3"}
 
 [address]
 control = 'a'

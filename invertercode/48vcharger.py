@@ -16,10 +16,10 @@ config_path = os.path.join((os.path.split(os.path.split(sys.argv[0])[0])[0]),
                            'config/48vcharger.toml')
 with open(config_path) as f:
     config = toml.load(f, _dict=dict)
-print config_path
+print (config_path)
 # print config['uarts']
 for key, value in config['uarts'].items():
-    print key + ' = ' + value['dev']
+    print (key + ' = ' + value['dev'])
 
 
 class handle_control(threading.Thread):
@@ -29,6 +29,17 @@ class handle_control(threading.Thread):
         self.command_list = []
         self.phy_list = {}
         self.init_handle_uart()
+
+    def init_handle_uart(self):
+        print ('init control')
+        self.handle_uart_t = {}
+        for key, value in config['uarts'].items():
+            if value['phy'] not in self.phy_list:
+                self.phy_list[value['phy']] = True
+            handle_uart_t = handle_uart(self, key, value)
+            self.handle_uart_t[key] = handle_uart_t
+            self.handle_uart_t[key].daemon = True
+            self.handle_uart_t[key].start()
 
     def command(self, command_name, value=None):
         command = {'command': command_name,
@@ -46,30 +57,27 @@ class handle_control(threading.Thread):
                 else:
                     done = False
             if done is True:
-                value = v
+                if config['command'][v['command']]['regex'] != 'ok':
+                    self.publish_to_mqtt(v)
+                else:
+                    print ('command ' + v['command'] + 'returned ok')
                 self.command_list.remove(v)
-                return value
 
-    def get_command(self):
-        return self.command_list
-
-    def init_handle_uart(self):
-        print 'init control'
-        self.handle_uart_t = {}
-        for key, value in config['uarts'].items():
-            if value['phy'] not in self.phy_list:
-                self.phy_list[value['phy']] = True
-            handle_uart_t = handle_uart(self, key, value)
-            self.handle_uart_t[key] = handle_uart_t
-            self.handle_uart_t[key].daemon = True
-            self.handle_uart_t[key].start()
+    def publish_to_mqtt(self, value):
+        return
 
     def run(self):
-        print self.phy_list
-        self.command('set_voltage', 24)
+        print (self.phy_list)
+        self.command('set_voltage', 12)
+        self.command('set_current', .5)
+        self.command('set_output', 1)
+        self.command('set_auto_output', 0)
+        self.command('read_set_voltage')
+        self.command('read_set_current')
+        self.command('read_output_state')
         while True:
             value = self.check_command_reply()
-            print 'run control ' + str(value)
+            print ('run control ' + str(value))
             time.sleep(1)
 
 
@@ -80,36 +88,46 @@ class handle_uart(threading.Thread):
         self.control = control
         self.dev = value['dev']
         self.address = config['address']['control']
-        print 'init ' + self.dev
+        print ('init ' + self.dev)
         self.ser = serial.Serial(self.dev, baudrate=4800, bytesize=8,
                                  parity='N', stopbits=1, timeout=0)
         self.busy = False
 
     def run(self):
         while True:
-            print self.dev + ' check for command'
+            self.check_command_queue()
+            time.sleep(.01)
+        while True:
+            self.send_command('read_actual_voltage')
+            self.send_command('read_actual_current')
+            self.send_command('read_actual_output_capacity')
+            time.sleep(1)
+
+    def check_command_queue(self):
             for v in self.control.command_list:
                 if self.dev not in v['complete']:
                     v['complete'][self.dev] = False
-                    print (self.dev + ' run command = ' + str(v['command'])
-                           + ', ' + str(v['value']))
-                    v['reply'][self.dev] = self.send_command(v['command'],
-                                                             v['value'])
+                    i = 0
+                    while True:
+                        if i == 0:
+                            print (self.dev + ' run command = '
+                                   + str(v['command']) + ', '
+                                   + str(v['value']))
+                        else:
+                            print (self.dev + ' retry command = '
+                                   + str(v['command']) + ', '
+                                   + str(v['value']))
+                        try:
+                            v['reply'][self.dev] = (
+                                self.send_command(v['command'], v['value']))
+                        except Exception as e:
+                            i += 1
+                            if i > 10:
+                                raise Exception(str(e))
+                            time.sleep(.01)
+                            continue
+                        break
                     v['complete'][self.dev] = True
-            time.sleep(1)
-        while True:
-            self.send_command('set_voltage', 24)
-            self.send_command('set_current', .5)
-            self.send_command('set_output', 0)
-            self.send_command('set_auto_output', 0)
-            self.send_command('read_set_voltage')
-            self.send_command('read_set_current')
-            self.send_command('read_output_state')
-            while True:
-                self.send_command('read_actual_voltage')
-                self.send_command('read_actual_current')
-                self.send_command('read_actual_output_capacity')
-                time.sleep(1)
 
     def send_command(self, command_name, value=None):
         command = config['command'][command_name]
@@ -133,7 +151,7 @@ class handle_uart(threading.Thread):
                     value = float(value) / command['scale']
             else:
                 value = str(value[0])
-            print self.dev + ' value = ' + str(value)
+            print (self.dev + ' value = ' + str(value))
             return(value)
         else:
             raise Exception('error uart returned bad string = ' + str(reply))
@@ -151,7 +169,7 @@ class handle_uart(threading.Thread):
             time.sleep(0.01)
         self.busy = True
         self.ser.write(output.encode())
-        print self.dev + ' sent = ' + str(re.sub('\n|\r', '', output))
+        print (self.dev + ' sent = ' + str(re.sub('\n|\r', '', output)))
         endofline = False
         timeout = 0
         reply = ''
