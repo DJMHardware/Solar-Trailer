@@ -52,7 +52,8 @@ class handle_control(threading.Thread):
                     print ('command ' + v['command'] + '\nreturned ok')
                 self.command_list.remove(v)
 
-    def publish_to_mqtt(self, v):
+    @staticmethod
+    def publish_to_mqtt(v):
         reply = []
         for vv in v['reply']:
             reply.append(v['reply'][vv])
@@ -60,7 +61,6 @@ class handle_control(threading.Thread):
         client.publish(config['mqtt']['topic'] + '/' + str(v['command']),
                        json.dumps(reply),
                        retain=True)
-        return
 
     def mqtt_on_message(self, client, userdata, message):
         topic = message.topic.split('/')

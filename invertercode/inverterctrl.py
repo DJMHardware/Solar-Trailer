@@ -295,8 +295,8 @@ class handle_485_inverter_data(threading.Thread):
                 try:
                     self.decode_bytestream()
                     self.publish_inverter_data()
-                except:
-                    print 'bad data'
+                except Exception as e:
+                    print ('bad data likey ' + str(e))
                 self.handle_485_t.inverter_bytestream_flag = False
             time.sleep(0.1)
         #    print (str((len(x_string)-1)) + ' ' + binascii.hexlify(x) + ' '
@@ -338,10 +338,10 @@ class handle_485_inverter_data(threading.Thread):
             self.inverter_dict_old[key] = value['Current']
 
     def publish_inverter_iomap(self):
-        for key, value in inverter_dict.items():
+        for key, value in self.inverter_dict.items():
             # print value[value.keys()[0]]
-            client.publish('Inverter/' + str(value.keys()[0]) + '/IOMap',
-                           json.dumps(value[value.keys()[0]]), retain=True)
+            client.publish('Inverter/' + str(key) + '/IOMap',
+                           json.dumps(value), retain=True)
 
 
 class handle_485_remote_data(threading.Thread):
@@ -374,7 +374,7 @@ class handle_485_remote_data(threading.Thread):
             time.sleep(.08)
 
     def scale_remote_dict(self):
-        print 'scaling'
+        print ('scaling')
         for key, value in self.remote_dict.items():
             if 'Scale' in value:
                 if isinstance(value['Scale'], dict):
