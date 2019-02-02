@@ -1,15 +1,10 @@
 import threading
-# import paho.mqtt.client as mqtt
 import sys
-# sys.path.append(r'/home/pi/pysrc')
-# sys.setrecursionlimit(200000)
-# import pydevd
-# pydevd.settrace('192.168.1.145')
 import paho.mqtt.client as mqtt
 import time
 import serial
-# from __builtin__ import str
 import toml
+import json
 import os.path
 import re
 
@@ -57,7 +52,14 @@ class handle_control(threading.Thread):
                     print ('command ' + v['command'] + '\nreturned ok')
                 self.command_list.remove(v)
 
-    def publish_to_mqtt(self, value):
+    def publish_to_mqtt(self, v):
+        reply = []
+        for vv in v['reply']:
+            reply.append(v['reply'][vv])
+        print ('test' + str(reply))
+        client.publish(config['mqtt']['topic'] + '/' + str(v['command']),
+                       json.dumps(reply),
+                       retain=True)
         return
 
     def mqtt_on_message(self, client, userdata, message):
@@ -191,7 +193,6 @@ config_path = os.path.join((os.path.split(os.path.split(sys.argv[0])[0])[0]),
 with open(config_path) as f:
     config = toml.load(f, _dict=dict)
 print (config_path)
-# print config['uarts']
 for key, value in config['uarts'].items():
     print (key + ' = ' + value['dev'])
 
