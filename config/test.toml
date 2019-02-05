@@ -1,0 +1,81 @@
+# This is a TOML document.
+
+title = "48v Charger configuration"
+
+[uarts]
+uart0 = { phy = 0, dev = "/dev/ttyUSB0"}
+uart1 = { phy = 0, dev = "/dev/ttyUSB1"}
+uart2 = { phy = 1, dev = "/dev/ttyUSB2"}
+uart3 = { phy = 1, dev = "/dev/ttyUSB3"}
+
+[mqtt]
+client = '48vCharger_py'
+host = 'inverterpi'
+topic = '48vChargerxx'
+
+[command]
+
+  [command.'Default']
+  prefix = 'a'
+  suffix = '\r\n'
+  cmd_format = '{!s}'
+  encoding_base = 10
+
+  [command.set_voltage]
+  cmd = 'wu'
+  range = {scale = 0.01, min = 0, max = 60.00}
+  send_value_format = '{:04d}'
+  reply_regex = 'ok'
+
+  [command.set_current]
+  cmd = 'wi'
+  range = {scale = 0.01, min = 0, max = 12.00}
+  send_value_format = '{:04d}'
+  reply_regex = 'ok'
+
+  [command.set_output]
+  cmd = 'wo'
+  range = {scale = 1, min = 0, max = 1}
+  send_value_format = '{:d}'
+  reply_regex = 'ok'
+
+  [command.set_auto_output]
+  cmd = 'wy'
+  range = {scale = 1, min = 0, max = 1}
+  send_value_format = '{:d}'
+  reply_regex = 'ok'
+
+  [command.read_actual_voltage]
+  cmd = 'ru'
+  range = {scale = 0.01, min = 0, max = 100.00}
+  reply_regex = '\d{11}'
+
+  [command.read_actual_current]
+  cmd = 'ri'
+  range = {scale = 0.01, min = 0, max = 100.00}
+  reply_regex = '\d{11}'
+
+  [command.read_actual_working_time]
+  cmd = 'rt'
+  range = {scale = 1, min = 0, max = 9.999e+10}
+  reply_regex = '\d{11}'
+
+  [command.read_actual_output_capacity]
+  cmd = 'rc'
+  range = {scale = 0.01, min = 0, max = 9.999e+8}
+  reply_regex = '\d{11}'
+
+  [command.read_set_voltage]
+  cmd = 'rv'
+  range = {scale = 100, min = 0, max = 60.00}
+  reply_regex = '\d{11}'
+
+  [command.read_set_current]
+  cmd = 'ra'
+  range = {scale = 100, min = 0, max = 12.00}
+  reply_regex = '\d{11}'
+
+  [command.read_output_state]
+  cmd = 'ro'
+  range = {scale = 1, min = 0, max = 1}
+  reply_regex = '\d{11}'
