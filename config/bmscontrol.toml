@@ -6,7 +6,8 @@ bytesize = 8
 parity = 'E'
 stopbits = 1
 timeout = 0.1
-uarts = [{dev = '/dev/ttyUSB0', phy = 0}]
+[uarts]
+uart0 = [{dev = '/dev/ttyUSB0', phy = 0}]
 
 [mqtt]
 client = 'BMS_py'
@@ -23,11 +24,12 @@ topic = 'BMSxx'
   cmd_format = '{:04X}'
   encoding_base = 16
   value_reply = true
-  reply_regex_prefix = '^:[0-9A-F]'
+  reply_regex = '[0-9A-F]'
 
   [command.'Relays Status']
   cmd = 0xF004
   payload = {bytes = 1, encode = 2, signed = false}
+  range = {scale =1, min = 0, max = 255}
   Lookup_Table =[{mask = 0x01, name = 'Discharge Enable'},
                 {mask = 0x02, name = 'Charge Enable'},
                 {mask = 0x04, name = 'Charger Safety'},

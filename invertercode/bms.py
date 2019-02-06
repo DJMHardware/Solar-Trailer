@@ -21,6 +21,8 @@ class Control():
         with open(os.path.join(config_path, config_file)) as f:
             self.config = toml.load(f, _dict=dict)
 
+        print self.config['uart']
+
         self.client = mqtt.Client(self.config['mqtt']['client'])
         self.client.connect(self.config['mqtt']['host'])
         self.client.loop_start()
@@ -43,7 +45,8 @@ class handle_control(threading.Thread):
         self.client = caller.client
         self.command_list = []
         self.phy_list = {}
-        self.client.subscribe([((self.config['mqtt']['topic'] + '/+/send'), 0)])
+        self.client.subscribe([((self.config['mqtt']['topic']
+                                 + '/+/send'), 0)])
         self.client.on_message = self.mqtt_on_message
         # self.init_handle_uart()
 
@@ -94,6 +97,16 @@ class handle_control(threading.Thread):
                                     + command['suffix'])
         return self.compute_reply_regex(command)
 
+    def extract_values(self, command, value):
+        re.sub(command['reply_regex_prefix'], '', value)
+        if 'payload' in command:
+            command['reply_regex'] = (command['reply_regex']
+                                      + '{' + str(command['payload']['encode']
+                                                  * command['payload']['bytes']
+                                                  ) + '}')
+        values = re.findall(command['reply_regex'], value)
+        return self.machine_to_human(command, values)
+
     def compute_reply_regex(self, command):
         if 'payload' in command:
             payload = command['payload']
@@ -127,8 +140,38 @@ class handle_control(threading.Thread):
         else:
             return ''
 
-    def machine_to_human(self, command):
-        pass
+    def machine_to_human(self, command, values):
+        if 'Lookup_Table' in command:
+            value = int(values[0], command['encoding_base'])
+            values = {}
+            for i in command['Lookup_Table']:
+                values[i['name']] = bool(value & i['mask'])
+            return values
+        if values[0] == 'ok':
+            return values[0]
+        for value in values:
+            if command['range']['scale'] is not 1:
+                value = (value * command['range']['scale'])
+                command['reply_value_format'] = (
+                    '{:.' + self.num_after_point(command['range']['scale'])
+                    + 'f}')
+            else:
+                command['reply_value_format'] = ('{:d}')
+            if value < command['range']['min']:
+                value = command['range']['min']
+            if value > command['range']['max']:
+                value = command['range']['max']
+            value = command['reply_value_format'].format(value)
+        if len(values) > 1:
+            return values
+        else:
+            return values[0]
+
+    def num_after_point(x):
+        s = str(x)
+        if '.' not in s:
+            return 0
+        return len(s) - s.index('.') - 1
 
     def check_command_reply(self):
         done = None
@@ -177,7 +220,7 @@ class handle_control(threading.Thread):
             time.sleep(1)
 
 
-class handle_uart(threading.Thread, Control):
+class handle_uart(threading.Thread):
     def __init__(self, control, threadID, value):
         threading.Thread.__init__(self)
         self.threadID = threadID
@@ -185,8 +228,12 @@ class handle_uart(threading.Thread, Control):
         self.dev = value['dev']
         self.address = self.config['address']['control']
         print ('init ' + self.dev)
-        self.ser = serial.Serial(self.dev, baudrate=4800, bytesize=8,
-                                 parity='N', stopbits=1, timeout=0)
+        self.ser = serial.Serial(self.dev,
+                                 baudrate=self.config['uart']['baudrate'],
+                                 bytesize=self.config['uart']['bytesize'],
+                                 parity=self.config['uart']['parity'],
+                                 stopbits=self.config['uart']['stopbits'],
+                                 timeout=self.config['uart']['timeout'])
         self.busy = False
 
     def run(self):
@@ -209,8 +256,9 @@ class handle_uart(threading.Thread, Control):
                                    + str(v['command']) + ', '
                                    + str(v['value']))
                         try:
-                            v['reply'][self.dev] = (
-                                self.send_command(v['command'], v['value']))
+                            value = (self.send_command(v))
+                            v['reply'][self.dev] = self.control.extract_values(
+                                v, value)
                         except Exception as e:
                             i += 1
                             if i > 10:
@@ -220,34 +268,15 @@ class handle_uart(threading.Thread, Control):
                         break
                     v['complete'][self.dev] = True
 
-    def send_command(self, command_name, value=None):
-        command = self.config['command'][command_name]
-        formatedvalue = ''
-        if command['format'] is not False:
-            if command['scale'] is not 1:
-                value = int(round(value * command['scale']))
-            if value < command['min']:
-                value = command['min']
-            if value > command['max']:
-                value = command['max']
-            formatedvalue = command['format'].format(value)
-        reply = self.uart_IO(self.address + command['cmd']
-                             + formatedvalue + '\r\n')
-        regex = "^#" + command['cmd'] + command['regex']
+    def send_command(self, command):
+        reply = self.uart_IO(command['output_string'], command['suffix'])
+        regex = command['reply_regex_string']
         if re.match(regex, reply):
-            value = re.findall(command['regex'], reply)
-            if command['regex'] != value[0]:
-                value = int(value[0])
-                if command['scale'] is not 1:
-                    value = float(value) / command['scale']
-            else:
-                value = str(value[0])
-            print (self.dev + ' value = ' + str(value))
-            return(value)
+            return(reply)
         else:
             raise Exception('error uart returned bad string = ' + str(reply))
 
-    def uart_IO(self, output):
+    def uart_IO(self, output, EOL_string):
         timeout = 0
         while (self.ser.out_waiting > 0 and self.ser.in_waiting > 0
                and self.busy):
@@ -260,15 +289,15 @@ class handle_uart(threading.Thread, Control):
             time.sleep(0.01)
         self.busy = True
         self.ser.write(output.encode())
-        print (self.dev + ' sent = ' + str(re.sub('\n|\r', '', output)))
+        print (self.dev + ' sent = ' + str(re.sub(EOL_string, '', output)))
         endofline = False
         timeout = 0
         reply = ''
         while not endofline:
             if self.ser.in_waiting > 0:
-                reply_stream = self.ser.read()
-                reply += re.sub('\n|\r', '', reply_stream)
-                if re.match('\n', reply_stream):
+                reply += self.ser.read()
+                if re.match(EOL_string, reply):
+                    reply = re.sub(EOL_string, '', reply)
                     endofline = True
             else:
                 timeout += 1

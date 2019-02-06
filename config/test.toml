@@ -2,6 +2,13 @@
 
 title = "48v Charger configuration"
 
+[uart]
+baudrate = 4800
+bytesize = 8
+parity = 'N'
+stopbits = 1
+timeout = 0
+
 [uarts]
 uart0 = { phy = 0, dev = "/dev/ttyUSB0"}
 uart1 = { phy = 0, dev = "/dev/ttyUSB1"}
@@ -14,7 +21,6 @@ host = 'inverterpi'
 topic = '48vChargerxx'
 
 [command]
-
   [command.'Default']
   prefix = 'a'
   suffix = '\r\n'
