@@ -48,7 +48,7 @@ class handle_control(threading.Thread):
         self.client.subscribe([((self.config['mqtt']['topic']
                                  + '/+/send'), 0)])
         self.client.on_message = self.mqtt_on_message
-        # self.init_handle_uart()
+        self.init_handle_uart()
 
     def init_handle_uart(self):
         print ('init control')
@@ -74,10 +74,10 @@ class handle_control(threading.Thread):
             for cmd in c['cmds']:
                 c['cmd'] = cmd
                 c['span'] = c['spans']['0x{:04X}'.format(cmd)]
-                print (self.build_command(c))
+                self.build_command(c)
         else:
-            print (self.build_command(c))
-        # self.command_list.append(c)
+            self.build_command(c)
+        self.command_list.append(c)
 
     def build_command(self, c):
         if 'send_value_format' in c:
@@ -93,11 +93,15 @@ class handle_control(threading.Thread):
         return self.compute_reply_regex(c)
 
     def extract_values(self, c, value):
+        print ('raw value = ' + value)
         re.sub(c['reply_regex_prefix'], '', value)
+        print ('reply_regex_prefix = ' + c['reply_regex_prefix'])
+        print ('stripped value = ' + value)
         if 'payload' in c:
             c['reply_regex'] += ('{' + str(c['payload']['encode']
                                            * c['payload']['bytes']) + '}')
         values = re.findall(c['reply_regex'], value)
+        print (values)
         return self.machine_to_human(c, values)
 
     def compute_reply_regex(self, c):
@@ -109,7 +113,7 @@ class handle_control(threading.Thread):
                     c['mode'] + 0x40) + '{:02X}'.format(c['cmd']))
             c['reply_regex'] = ('[0-9A-F]{' + str(p['length']) + '}')
         else:
-            c['reply_regex_prefix'] = c['prefix'] + c['cmd']
+            c['reply_regex_prefix'] = c['reply_prefix'] + c['cmd']
         c['reply_regex_string'] = ('^' + c['reply_regex_prefix']
                                    + c['reply_regex'])
         return c
@@ -137,12 +141,12 @@ class handle_control(threading.Thread):
             return values[0]
         for value in values:
             if c['range']['scale'] is not 1:
-                value = (value * c['range']['scale'])
+                value = (float(value) * c['range']['scale'])
                 c['reply_value_format'] = (
-                    '{:.' + self.num_after_point(c['range']['scale'])
+                    '{:.' + str(self.num_after_point(c['range']['scale']))
                     + 'f}')
             else:
-                c['reply_value_format'] = ('{:d}')
+                c['reply_value_format'] = ('{:f}')
             if value < c['range']['min']:
                 value = c['range']['min']
             if value > c['range']['max']:
@@ -153,7 +157,7 @@ class handle_control(threading.Thread):
         else:
             return values[0]
 
-    def num_after_point(x):
+    def num_after_point(self, x):
         s = str(x)
         if '.' not in s:
             return 0
@@ -168,7 +172,7 @@ class handle_control(threading.Thread):
                 else:
                     done = False
             if done is True:
-                if self.config['command'][v['command']]['regex'] != 'ok':
+                if self.config['command'][v['command']]['reply_regex'] != 'ok':
                     self.publish_to_mqtt(v)
                 else:
                     print ('command ' + v['command'] + '\nreturned ok')
@@ -211,21 +215,28 @@ class handle_uart(threading.Thread):
         threading.Thread.__init__(self)
         self.threadID = threadID
         self.control = control
+        self.config = control.config
         self.dev = value['dev']
-        self.address = self.config['address']['control']
         print ('init ' + self.dev)
-        self.ser = serial.Serial(self.dev,
-                                 baudrate=self.config['uart']['baudrate'],
-                                 bytesize=self.config['uart']['bytesize'],
-                                 parity=self.config['uart']['parity'],
-                                 stopbits=self.config['uart']['stopbits'],
-                                 timeout=self.config['uart']['timeout'])
+        self.ser = serial.Serial(self.dev, baudrate=4800, bytesize=8,
+                                 parity='N', stopbits=1, timeout=0)
+
+#                                 baudrate=self.config['uart']['baudrate'],
+#                                 bytesize=self.config['uart']['bytesize'],
+#                                 parity=self.config['uart']['parity'],
+#                                 stopbits=self.config['uart']['stopbits'],
+#                                 timeout=self.config['uart']['timeout'])
         self.busy = False
 
     def run(self):
+        i = 0
+        print 'here'
         while True:
             self.check_command_queue()
             time.sleep(.01)
+            if i > 100:
+                print (self.control.command_list)
+                i = 0
 
     def check_command_queue(self):
             for v in self.control.command_list:
@@ -281,8 +292,9 @@ class handle_uart(threading.Thread):
         reply = ''
         while not endofline:
             if self.ser.in_waiting > 0:
-                reply += self.ser.read()
-                if re.match(EOL_string, reply):
+                r = self.ser.read()
+                reply += r
+                if re.match('\n', r):
                     reply = re.sub(EOL_string, '', reply)
                     endofline = True
             else:
@@ -295,11 +307,14 @@ class handle_uart(threading.Thread):
         return(reply)
 
 
-control_bms = Control('bmscontrol.toml')
+# control_bms = Control('bmscontrol.toml')
 control_test = Control('test.toml')
 control_test.command('set_voltage', 12)
-control_bms.command('Relays Status')
-control_bms.command('Cell Voltages')
+control_test.command('set_output', 1)
+control_test.command('read_actual_voltage')
+control_test.command('read_actual_working_time')
+# control_bms.command('Relays Status')
+# control_bms.command('Cell Voltages')
 
 while True:
     time.sleep(1)

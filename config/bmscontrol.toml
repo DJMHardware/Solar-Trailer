@@ -6,6 +6,7 @@ bytesize = 8
 parity = 'E'
 stopbits = 1
 timeout = 0.1
+
 [uarts]
 uart0 = [{dev = '/dev/ttyUSB0', phy = 0}]
 
@@ -19,6 +20,7 @@ topic = 'BMSxx'
 
   [command.'Default']
   prefix = ':'
+  reply_prefix = ':'
   mode = 0x22
   suffix = '\n'
   cmd_format = '{:04X}'
