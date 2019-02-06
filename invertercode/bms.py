@@ -62,106 +62,92 @@ class handle_control(threading.Thread):
             self.handle_uart_t[key].start()
 
     def command(self, command_name, value=None):
-        command = self.config['command'][command_name]
-        command.update(self.config['command']['Default'])
-        command.update({'command': command_name,
-                        'value': value,
-                        'output_string': '',
-                        'value_string': '',
-                        'complete': {},
-                        'reply': {}})
-        if 'cmds' in command:
-            for cmd in command['cmds']:
-                command['cmd'] = cmd
-                command['span'] = command['spans']['0x{:04X}'.format(cmd)]
-                print (self.build_command(command))
+        c = self.config['command'][command_name]
+        c.update(self.config['command']['Default'])
+        c.update({'command': command_name,
+                  'value': value,
+                  'output_string': '',
+                  'value_string': '',
+                  'complete': {},
+                  'reply': {}})
+        if 'cmds' in c:
+            for cmd in c['cmds']:
+                c['cmd'] = cmd
+                c['span'] = c['spans']['0x{:04X}'.format(cmd)]
+                print (self.build_command(c))
         else:
-            print (self.build_command(command))
-        # self.command_list.append(command)
+            print (self.build_command(c))
+        # self.command_list.append(c)
 
-    def build_command(self, command):
-        if 'send_value_format' in command:
-            command['value_string'] = self.human_to_machine(command,
-                                                            command['value'])
-        command['output_string'] = (command['cmd_format']
-                                    .format(command['cmd'])
-                                    + command['value_string'])
-        if 'mode' in command:
-            command['output_string'] = ('{:02X}'.format
-                                        ((len(command['output_string'])
-                                          / 2) + 1)
-                                        + '{:02X}'.format(command['mode'])
-                                        + command['output_string'])
-        command['output_string'] = (command['prefix']
-                                    + command['output_string']
-                                    + command['suffix'])
-        return self.compute_reply_regex(command)
+    def build_command(self, c):
+        if 'send_value_format' in c:
+            c['value_string'] = self.human_to_machine(c, c['value'])
+        c['output_string'] = (c['cmd_format'].format(c['cmd'])
+                              + c['value_string'])
+        if 'mode' in c:
+            c['output_string'] = ('{:02X}'.format
+                                  ((len(c['output_string']) / 2) + 1)
+                                  + '{:02X}'.format(c['mode'])
+                                  + c['output_string'])
+        c['output_string'] = (c['prefix'] + c['output_string'] + c['suffix'])
+        return self.compute_reply_regex(c)
 
-    def extract_values(self, command, value):
-        re.sub(command['reply_regex_prefix'], '', value)
-        if 'payload' in command:
-            command['reply_regex'] = (command['reply_regex']
-                                      + '{' + str(command['payload']['encode']
-                                                  * command['payload']['bytes']
-                                                  ) + '}')
-        values = re.findall(command['reply_regex'], value)
-        return self.machine_to_human(command, values)
+    def extract_values(self, c, value):
+        re.sub(c['reply_regex_prefix'], '', value)
+        if 'payload' in c:
+            c['reply_regex'] += ('{' + str(c['payload']['encode']
+                                           * c['payload']['bytes']) + '}')
+        values = re.findall(c['reply_regex'], value)
+        return self.machine_to_human(c, values)
 
-    def compute_reply_regex(self, command):
-        if 'payload' in command:
-            payload = command['payload']
-            command['payload']['length'] = ((payload['encode'] * 2)
-                                            * payload['bytes'])
-            command['reply_regex_prefix'] = (command['prefix']
-                                             + '{:02X}'.format(
-                                                 (command['payload']['length']
-                                                  / 2) + 3)
-                                             + '{:02X}'.format(command['mode']
-                                                               + 0x40)
-                                             + '{:02X}'.format(command['cmd']))
-            command['reply_regex'] = ('[0-9A-F]{'
-                                      + str(command['payload']['length'])
-                                      + '}')
+    def compute_reply_regex(self, c):
+        if 'payload' in c:
+            p = c['payload']
+            p['length'] = ((p['encode'] * 2) * p['bytes'])
+            c['reply_regex_prefix'] = (c['prefix'] + '{:02X}'.format((
+                p['length'] / 2) + 3) + '{:02X}'.format(
+                    c['mode'] + 0x40) + '{:02X}'.format(c['cmd']))
+            c['reply_regex'] = ('[0-9A-F]{' + str(p['length']) + '}')
         else:
-            command['reply_regex_prefix'] = command['prefix'] + command['cmd']
-        command['reply_regex_string'] = ('^' + command['reply_regex_prefix']
-                                         + command['reply_regex'])
-        return command
+            c['reply_regex_prefix'] = c['prefix'] + c['cmd']
+        c['reply_regex_string'] = ('^' + c['reply_regex_prefix']
+                                   + c['reply_regex'])
+        return c
 
-    def human_to_machine(self, command, value):
+    def human_to_machine(self, c, value):
         if (value is not None):
-            if value < command['range']['min']:
-                value = command['range']['min']
-            if value > command['range']['max']:
-                value = command['range']['max']
-            if command['range']['scale'] is not 1:
-                value = int(round(value / command['range']['scale']))
-            return command['send_value_format'].format(value)
+            if value < c['range']['min']:
+                value = c['range']['min']
+            if value > c['range']['max']:
+                value = c['range']['max']
+            if c['range']['scale'] is not 1:
+                value = int(round(value / c['range']['scale']))
+            return c['send_value_format'].format(value)
         else:
             return ''
 
-    def machine_to_human(self, command, values):
-        if 'Lookup_Table' in command:
-            value = int(values[0], command['encoding_base'])
+    def machine_to_human(self, c, values):
+        if 'Lookup_Table' in c:
+            value = int(values[0], c['encoding_base'])
             values = {}
-            for i in command['Lookup_Table']:
+            for i in c['Lookup_Table']:
                 values[i['name']] = bool(value & i['mask'])
             return values
         if values[0] == 'ok':
             return values[0]
         for value in values:
-            if command['range']['scale'] is not 1:
-                value = (value * command['range']['scale'])
-                command['reply_value_format'] = (
-                    '{:.' + self.num_after_point(command['range']['scale'])
+            if c['range']['scale'] is not 1:
+                value = (value * c['range']['scale'])
+                c['reply_value_format'] = (
+                    '{:.' + self.num_after_point(c['range']['scale'])
                     + 'f}')
             else:
-                command['reply_value_format'] = ('{:d}')
-            if value < command['range']['min']:
-                value = command['range']['min']
-            if value > command['range']['max']:
-                value = command['range']['max']
-            value = command['reply_value_format'].format(value)
+                c['reply_value_format'] = ('{:d}')
+            if value < c['range']['min']:
+                value = c['range']['min']
+            if value > c['range']['max']:
+                value = c['range']['max']
+            value = c['reply_value_format'].format(value)
         if len(values) > 1:
             return values
         else:
@@ -202,11 +188,11 @@ class handle_control(threading.Thread):
         print ('topic = ' + str(topic[1]))
         print ('message received = ' + message.payload)
         if topic[1] in self.config['command']:
-            command = self.config['command'][topic[1]]
-            if command['format'] is False:
+            c = self.config['command'][topic[1]]
+            if c['format'] is False:
                 self.command(topic[1])
             else:
-                if command['scale'] == 1:
+                if c['scale'] == 1:
                     print (int(message.payload))
                     self.command(topic[1], int(message.payload))
                 else:
@@ -268,9 +254,9 @@ class handle_uart(threading.Thread):
                         break
                     v['complete'][self.dev] = True
 
-    def send_command(self, command):
-        reply = self.uart_IO(command['output_string'], command['suffix'])
-        regex = command['reply_regex_string']
+    def send_command(self, c):
+        reply = self.uart_IO(c['output_string'], c['suffix'])
+        regex = c['reply_regex_string']
         if re.match(regex, reply):
             return(reply)
         else:
