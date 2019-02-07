@@ -8,7 +8,7 @@ stopbits = 1
 timeout = 0.1
 
 [uarts]
-uart0 = [{dev = '/dev/ttyUSB0', phy = 0}]
+uart0 = {dev = '/dev/ttyUSB1', phy = 0}
 
 [mqtt]
 client = 'BMS_py'
@@ -22,7 +22,7 @@ topic = 'BMSxx'
   prefix = ':'
   reply_prefix = ':'
   mode = 0x22
-  suffix = '\n'
+  suffix = "\n"
   cmd_format = '{:04X}'
   encoding_base = 16
   value_reply = true
