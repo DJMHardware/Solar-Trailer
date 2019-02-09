@@ -234,16 +234,12 @@ class handle_uart(threading.Thread):
         print 'here'
         while True:
             self.check_command_queue()
-            time.sleep(1)
+            time.sleep(0.01)
             if i > 100:
                 print (self.control.command_list)
                 i = 0
 
     def check_command_queue(self):
-        for i in range(len(self.control.command_list)):
-            print ('start ' + str(i) + ' = ' + str(
-                self.control.command_list[i]['cmd']) + ' = '),
-            print (self.control.command_list[i]['complete'])
         for v in self.control.command_list:
             if self.dev not in v['complete']:
                 v['complete'][self.dev] = False
@@ -261,10 +257,6 @@ class handle_uart(threading.Thread):
                         value = (self.send_command(v))
                         v['reply'][self.dev] = self.control.extract_values(
                             v, value)
-                        for i in range(len(self.control.command_list)):
-                            print ('mid' + str(i) + ' = ' + str(
-                                self.control.command_list[i]['cmd']) + ' = '),
-                            print (self.control.command_list[i]['complete'])
                     except Exception as e:
                         i += 1
                         if i > 10:
@@ -272,15 +264,7 @@ class handle_uart(threading.Thread):
                         time.sleep(.01)
                         continue
                     break
-                for i in range(len(self.control.command_list)):
-                    print ('end 1 ' + str(i) + ' = ' + str(
-                        self.control.command_list[i]['cmd']) + ' = '),
-                    print (self.control.command_list[i]['complete'])
                 v['complete'][self.dev] = True
-                for i in range(len(self.control.command_list)):
-                    print ('end 2 ' + str(i) + ' = ' + str(
-                        self.control.command_list[i]['cmd']) + ' = '),
-                    print (self.control.command_list[i]['complete'])
 
     def send_command(self, c):
         reply = self.uart_IO(c['output_string'], c['suffix'])

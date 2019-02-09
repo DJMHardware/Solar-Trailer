@@ -30,12 +30,14 @@ topic = '48vChargerxx'
 
   [command.set_voltage]
   cmd = 'wu'
+  value = 12
   range = {scale = 0.01, min = 0, max = 60.00}
   send_value_format = '{:04d}'
   reply_regex = 'ok'
 
   [command.set_current]
   cmd = 'wi'
+  value = 2
   range = {scale = 0.01, min = 0, max = 12.00}
   send_value_format = '{:04d}'
   reply_regex = 'ok'
