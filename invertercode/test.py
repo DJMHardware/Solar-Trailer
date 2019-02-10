@@ -11,15 +11,14 @@ import re
 
 
 class Register():
-    initialized = False
 
-    def __init__(self, command_name, command, new_data_callback=None):
+    def __init__(self, command_name, command_dict, command_callback):
         self.command_name = command_name
         self.value = 0
-        self._new_data_callback = new_data_callback
+        self._command_callback = command_callback
         self.waiting_on_data = False
-        self.__dict__.update(command['Default'].copy())
-        self.__dict__.update(command[command_name])
+        self.__dict__.update(command_dict['Default'].copy())
+        self.__dict__.update(command_dict[command_name])
         self.__dict__.update({'output_string': '',
                               'value_string': '',
                               'complete': {},
@@ -29,12 +28,12 @@ class Register():
         self._compute_reply_regex()
 
     @classmethod
-    def class_init(cls, command, new_data_callback=None):
+    def class_init(cls, command_dict, command_callback):
         c = {}
-        for k in command.keys():
+        for k in command_dict.keys():
             if k == 'Default':
                 continue
-            c[k] = cls(k, command, new_data_callback)
+            c[k] = cls(k, command_dict, command_callback)
             print (k + ' = ' + c[k].output_string),
         return c
 
@@ -71,15 +70,15 @@ class Register():
                 values[i['name']] = bool(value & i['mask'])
             return values
         for i in range(len(values)):
-            value = values[i]
+            value = int(values[i], self.encoding_base)
             if self.range['scale'] is not 1:
-                value = (float(int(value, self.encoding_base))
+                value = (float(value)
                          * self.range['scale'])
                 self.reply_value_format = (
                     '{:.' + str(self._num_after_point(self.range['scale']))
                     + 'f}')
             else:
-                self.reply_value_format = ('{:f}')
+                self.reply_value_format = ('{:d}')
             if value < self.range['min']:
                 value = self.range['min']
             if value > self.range['max']:
@@ -135,9 +134,6 @@ class Register():
         self.reply_buffer = {}
         self.waiting_on_data = True
 
-    def new_data_callback(self, new_data_callback):
-        self._new_data_callback = new_data_callback
-
     def check_complete(self):
         done = None
         for c in self.complete:
@@ -152,8 +148,7 @@ class Register():
             else:
                 new_data = False
             self.waiting_on_data = False
-            if self._new_data_callback is not None and new_data:
-                self._new_data_callback(self.command_name, self.reply)
+            self._command_callback(self.command_name, self.reply, new_data)
         return  # not self.waiting_on_data
 
 
@@ -189,22 +184,22 @@ class Control(threading.Thread):
         self.client.connect(self.config['mqtt']['host'])
         self.client.loop_start()
         self.c = Register.class_init(self.config['command'],
-                                     self.new_data_callback)
+                                     self.command_callback)
         self.handle_uart_t = Handle_uart.class_init(self)
 
-    def new_data_callback(self, command_name, values):
+    def command_callback(self, command_name, values, new_data):
         self.current_command = None
-        self.command_queue.taskdone()
-        print ('new data = {}'.format(values))
+        if new_data:
+            print ('new data = {}'.format(values))
 
     def get_command(self, dev):
         c = None
-        if (not self.command_queue.empty() and c is None):
-            c = self.command_queue.get()
-            self.current_command = c
-        if (c is not None
-                or dev not in self.current_command.complete):
+        if (not self.command_queue.empty() and self.current_command is None):
+            self.current_command = self.command_queue.get()
+        if (self.current_command is not None
+                and dev not in self.current_command.complete):
             self.current_command.complete[dev] = False
+            c = self.current_command
         return c
 
     def run_command(self, command_name, value=None):
@@ -320,7 +315,14 @@ class Handle_uart(threading.Thread):
         return(reply)
 
 
-control_bms = Control.class_init('test.toml')
-control_bms.run_command('set_voltage', 13)
+control_test = Control.class_init('test.toml')
+control_test.run_command('set_voltage', 12)
+control_test.run_command('set_output', 1)
+control_test.run_command('read_actual_voltage')
+control_test.run_command('read_actual_working_time')
+# control_bms = Control.class_init('bmscontrol.toml')
+# control_bms.command('Relays Status')
+# control_bms.command('Cell Voltages')
+
 while True:
     time.sleep(0.01)
