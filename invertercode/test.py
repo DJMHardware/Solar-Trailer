@@ -10,7 +10,7 @@ import os.path
 import re
 
 
-class Register():
+class Register(object):
 
     def __init__(self, command_name, command_dict, command_callback):
         self.command_name = command_name
@@ -33,8 +33,15 @@ class Register():
         for k in command_dict.keys():
             if k == 'Default':
                 continue
+            if 'cmds' in command_dict[k]:
+                i = 0
+                for cmd in command_dict[k]['cmds']:
+                    i += 1
+                    command_dict[k + str(i)] = command_dict[k].copy()
+                    command_dict[k + str(i)]['cmd'] = cmd
+                    command_dict[k + str(i)]['span'] = (command_dict[k]
+                                                        ['spans'][i])
             c[k] = cls(k, command_dict, command_callback)
-            print (k + ' = ' + c[k].output_string),
         return c
 
     def _build_command_string(self):
@@ -43,8 +50,8 @@ class Register():
         self.output_string = (self.cmd_format.format(self.cmd)
                               + self.value_string)
         if getattr(self, 'mode', None):
-            self.output_string = ('{:02X}'.format
-                                  ((len(self.output_string) / 2) + 1)
+            self.output_string = ('{:02X}'.format(int
+                                  ((len(self.output_string) / 2) + 1))
                                   + '{:02X}'.format(self.mode)
                                   + self.output_string)
         self.output_string = (self.prefix + self.output_string + self.suffix)
@@ -69,8 +76,8 @@ class Register():
             for i in self.Lookup_Table:
                 values[i['name']] = bool(value & i['mask'])
             return values
-        for i in range(len(values)):
-            value = int(values[i], self.encoding_base)
+        for i, value in enumerate(values):
+            value = int(value, self.encoding_base)
             if self.range['scale'] is not 1:
                 value = (float(value)
                          * self.range['scale'])
@@ -315,14 +322,14 @@ class Handle_uart(threading.Thread):
         return(reply)
 
 
-control_test = Control.class_init('test.toml')
-control_test.run_command('set_voltage', 12)
-control_test.run_command('set_output', 1)
-control_test.run_command('read_actual_voltage')
-control_test.run_command('read_actual_working_time')
-# control_bms = Control.class_init('bmscontrol.toml')
-# control_bms.command('Relays Status')
-# control_bms.command('Cell Voltages')
+# control_test = Control.class_init('test.toml')
+# control_test.run_command('set_voltage', 12)
+# control_test.run_command('set_output', 1)
+# control_test.run_command('read_actual_voltage')
+# control_test.run_command('read_actual_working_time')
+control_bms = Control.class_init('bmscontrol.toml')
+control_bms.run_command('Relays Status')
+# control_bms.run_command('Cell Voltages')
 
 while True:
     time.sleep(0.01)
