@@ -18,40 +18,54 @@ class Register(object):
         self._command_callback = command_callback
         self.waiting_on_data = False
         self.__dict__.update(command_dict['Default'].copy())
-        self.__dict__.update(command_dict[command_name])
+        self.__dict__.update(command_dict[command_name].copy())
+        print (command_dict[command_name])
         self.__dict__.update({'output_string': '',
                               'value_string': '',
                               'complete': {},
-                              'reply': {},
+                              'reply': None,
+                              'raw_reply': {},
                               'reply_buffer': {}})
-        self._build_command_string()
-        self._compute_reply_regex()
+        if ('groupcmd' not in self.__dict__):
+            print ('cmd = 0x{:04X}'.format(self.cmd))
+            self._build_command_string()
+            self._compute_reply_regex()
+        else:
+            self.cmd_done = []
+            self.reply = []
+            self.reply_buffer = []
 
     @classmethod
     def class_init(cls, command_dict, command_callback):
         c = {}
-        for k in command_dict.keys():
+        for k in command_dict.copy():
             if k == 'Default':
                 continue
             if 'cmds' in command_dict[k]:
                 i = 0
                 for cmd in command_dict[k]['cmds']:
                     i += 1
-                    command_dict[k + str(i)] = command_dict[k].copy()
-                    command_dict[k + str(i)]['cmd'] = cmd
-                    command_dict[k + str(i)]['span'] = (command_dict[k]
-                                                        ['spans'][i])
+                    cmd_str = '0x{:04X}'.format(cmd)
+                    command_dict_c = command_dict.copy()
+                    command_dict_c[k + str(i)] = command_dict[k].copy()
+                    command_dict_c[k + str(i)]['cmd'] = cmd
+                    command_dict_c[k + str(i)]['parent_command'] = k
+                    command_dict_c[k + str(i)]['span'] = (command_dict[k]
+                                                          ['spans'][cmd_str])
+                    c[k + str(i)] = cls(k + str(i), command_dict_c,
+                                        command_callback)
+                command_dict[k]['groupcmd'] = True
             c[k] = cls(k, command_dict, command_callback)
         return c
 
     def _build_command_string(self):
-        if getattr(self, 'send_value_format', None):
+        if 'send_value_format' in self.__dict__:
             self._human_to_machine()
         self.output_string = (self.cmd_format.format(self.cmd)
                               + self.value_string)
-        if getattr(self, 'mode', None):
-            self.output_string = ('{:02X}'.format(int
-                                  ((len(self.output_string) / 2) + 1))
+        if 'mode' in self.__dict__:
+            self.output_string = ('{:02X}'.format(int((len(self.output_string)
+                                                       / 2) + 1))
                                   + '{:02X}'.format(self.mode)
                                   + self.output_string)
         self.output_string = (self.prefix + self.output_string + self.suffix)
@@ -70,11 +84,14 @@ class Register(object):
     def _machine_to_human(self, values):
         if values[0] == 'ok':
             return values[0]
-        if getattr(self, 'Lookup_Table', None):
+        if 'Lookup_Table' in self.__dict__:
             value = int(values[0], self.encoding_base)
             values = {}
             for i in self.Lookup_Table:
-                values[i['name']] = bool(value & i['mask'])
+                if 'mask' in i:
+                    values[i['name']] = bool(value & i['mask'])
+                if 'key' in i:
+                    values[i['name']] = bool(value == i['key'])
             return values
         for i, value in enumerate(values):
             value = int(value, self.encoding_base)
@@ -105,40 +122,48 @@ class Register(object):
 
     def _compute_reply_regex(self):
         r = self.reply_regex
-        if getattr(self, 'payload', None):
+        if 'payload' in self.__dict__:
             p = self.payload
             p['length'] = ((p['encode'] * 2) * p['bytes'])
-            self.reply_regex_prefix = (self.reply_prefix + '{:02X}'.format((
-                p['length'] / 2) + 3) + '{:02X}'.format(
-                    self.mode + 0x40) + '{:02X}'.format(self.cmd))
+            self.reply_regex_prefix = (self.reply_prefix
+                                       + '{:02X}'.format(int((p['length']
+                                                              / 2) + 3))
+                                       + '{:02X}'.format(self.mode + 0x40)
+                                       + '{:02X}'.format(self.cmd))
             r += ('{' + str(p['length']) + '}')
         else:
             self.reply_regex_prefix = self.reply_prefix + self.cmd
         self.reply_regex_string = ('^' + self.reply_regex_prefix + r)
 
     def set_value(self, value):
-        if value != self.value:
-            self.value = value
-            self._build_command_string()
+        if value is not None:
+            if value != self.value:
+                self.value = value
+                self._build_command_string()
 
     def extract_values(self, value, dev):
+        if not re.match(self.reply_regex_string, value):
+            raise Exception('error uart {} returned bad string = {}'
+                            .format(dev, value))
         value = re.sub(r'^' + self.reply_regex_prefix, '', value)
+        print ('reply value = ' + str(value))
         reply_regex_mod = ''
-        if getattr(self, 'payload', None):
+        if 'payload' in self.__dict__:
             reply_regex_mod = ('{' + str(self.payload['encode'] * 2) + '}')
         self.reply_buffer[dev] = self._machine_to_human(
             re.findall((self.reply_regex + reply_regex_mod), value))
         self.complete[dev] = True
         self.check_complete()
 
-    def start_commmand(self, value=None):
-        if value is not None:
-            self.set_value(value)
+    def start_commmand(self):
         if self.waiting_on_data:
             raise Exception('{} waiting on data still'.format(
                 self.command_name))
         self.complete = {}
         self.reply_buffer = {}
+        if 'groupcmd' in self.__dict__:
+            self.cmd_done = []
+            self.reply_buffer = []
         self.waiting_on_data = True
 
     def check_complete(self):
@@ -149,14 +174,45 @@ class Register(object):
             else:
                 done = False
         if done is True:
-            if self.reply != self.reply_buffer:
-                self.reply = self.reply_buffer.copy()
-                new_data = True
-            else:
-                new_data = False
-            self.waiting_on_data = False
-            self._command_callback(self.command_name, self.reply, new_data)
-        return  # not self.waiting_on_data
+            self.raw_reply = self._new_data_check(self.raw_reply)
+            self._compute_reply()
+            self._callback()
+
+    def _new_data_check(self, reply):
+        if reply != self.reply_buffer:
+            reply = self.reply_buffer.copy()
+            self.new_data = True
+        else:
+            self.new_data = False
+        return reply
+
+    def _compute_reply(self):
+        if 'single_uart' in self.__dict__ and self.single_uart:
+            for k in self.raw_reply:
+                self.reply = self.raw_reply[k]
+                self.dev = k
+        else:
+            self.reply = self.raw_reply
+
+    def _callback(self):
+        self.waiting_on_data = False
+        self._command_callback(self.command_name, self.reply, self.new_data)
+
+    def add_data(self, cmd, data, span):
+        if cmd not in self.cmd_done:
+            self.cmd_done.append(cmd)
+        for i in range(span[1] - len(self.reply_buffer)):
+            self.reply_buffer.append(None)
+        for i in range(span[1] - span[0] + 1):
+            self.reply_buffer[span[0] + i - 1] = data[i]
+        done = True
+        for cmd in self.cmds:
+            done = bool(done and cmd in self.cmd_done)
+        if done:
+            self.reply = self._new_data_check(self.reply)
+            self._command_callback(self.command_name,
+                                   self.reply,
+                                   self.new_data)
 
 
 class Control(threading.Thread):
@@ -173,7 +229,6 @@ class Control(threading.Thread):
 
     def __init__(self, threadID, config_file):
         threading.Thread.__init__(self)
-
         self.threadLock = threading.Lock()
         self.threadID = threadID
         self.command_queue = queue.Queue()
@@ -185,8 +240,6 @@ class Control(threading.Thread):
         with open(os.path.join(config_path, config_file)) as f:
             self.config = toml.load(f, _dict=dict)
 
-        print (self.config['uart'])
-
         self.client = mqtt.Client(self.config['mqtt']['client'])
         self.client.connect(self.config['mqtt']['host'])
         self.client.loop_start()
@@ -194,7 +247,14 @@ class Control(threading.Thread):
                                      self.command_callback)
         self.handle_uart_t = Handle_uart.class_init(self)
 
+    def _check_callback_group_command(self, command_name, values, new_data):
+        if new_data and 'parent_command' in self.c[command_name].__dict__:
+            c = self.c[command_name]
+            p = self.c[c.parent_command]
+            p.add_data(c.cmd, c.reply, c.span)
+
     def command_callback(self, command_name, values, new_data):
+        self._check_callback_group_command(command_name, values, new_data)
         self.current_command = None
         if new_data:
             print ('new data = {}'.format(values))
@@ -207,11 +267,18 @@ class Control(threading.Thread):
                 and dev not in self.current_command.complete):
             self.current_command.complete[dev] = False
             c = self.current_command
+        if c is not None:
+            c.start_commmand()
         return c
 
     def run_command(self, command_name, value=None):
-        self.c[command_name].start_commmand(value)
-        self.command_queue.put(self.c[command_name])
+        if 'cmds' in self.c[command_name].__dict__:
+            self.c[command_name].start_commmand()
+            for i in range(len(self.c[command_name].cmds)):
+                self.command_queue.put(self.c[command_name + str(i + 1)])
+        else:
+            self.c[command_name].set_value(value)
+            self.command_queue.put(self.c[command_name])
 
     def run(self):
         while True:
@@ -270,23 +337,16 @@ class Handle_uart(threading.Thread):
                            + str(c.command_name) + ', '
                            + str(c.value))
                 try:
-                    c.extract_values(self.send_command(c), self.dev)
+                    c.extract_values(self.uart_IO(
+                        c.output_string, c.suffix), self.dev)
                     time.sleep(0.01)
                 except Exception as e:
                     i += 1
                     if i > 10:
-                        raise Exception(str(e))
+                        raise Exception(repr(e))
                     time.sleep(.01)
                     continue
                 break
-
-    def send_command(self, c):
-        reply = self.uart_IO(c.output_string, c.suffix)
-        regex = c.reply_regex_string
-        if re.match(regex, reply):
-            return(reply)
-        else:
-            raise Exception('error uart returned bad string = ' + str(reply))
 
     def uart_IO(self, output, EOL_string):
         timeout = 0
@@ -329,7 +389,8 @@ class Handle_uart(threading.Thread):
 # control_test.run_command('read_actual_working_time')
 control_bms = Control.class_init('bmscontrol.toml')
 control_bms.run_command('Relays Status')
-# control_bms.run_command('Cell Voltages')
+control_bms.run_command('Pack Voltage')
+control_bms.run_command('Cell Voltages')
 
 while True:
     time.sleep(0.01)

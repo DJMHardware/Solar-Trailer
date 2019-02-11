@@ -19,6 +19,7 @@ topic = 'BMSxx'
 [command]
 
   [command.'Default']
+  single_uart = true
   prefix = ':'
   reply_prefix = ':'
   mode = 0x22
@@ -126,16 +127,16 @@ topic = 'BMSxx'
   cmds = [0xF100, 0xF101]
   payload = {bytes = 12, encode = 2, signed = false}
   range = {scale =0.0001, min = 0, max = 5}
-  spans = {0xF100 = [1, 12], 0xF101 = [13, 24]}
+  spans = {0xF100 = [1, 12], 0xF101 = [13, 16]}
 
   [command.'Internal Resistances']
   cmds = [0xF200, 0xF201]
   payload = {bytes = 12, encode = 2, signed = false}
   range = {scale =0.0001, min = 0, max = 5}
-  spans = {0xF200 = [1, 12], 0xF201 = [13, 24]}
+  spans = {0xF200 = [1, 12], 0xF201 = [13, 16]}
 
   [command.'Open Cell Voltages']
   cmds = [0xF300, 0xF301]
   payload = {bytes = 12, encode = 2, signed = false}
   range = {scale =0.01, min = 0, max = 327.67}
-  spans = {0xF300 = [1, 12], 0xF301 = [13, 24]}
+  spans = {0xF300 = [1, 12], 0xF301 = [13, 16]}
