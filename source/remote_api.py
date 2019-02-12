@@ -18,10 +18,8 @@ class RemoteCommandData(object):
         self.__dict__.update(command_dict[command_name].copy())
         self.__dict__.update({'output_string': '',
                               'value_string': '',
-                              'complete': {},
                               'reply': None,
-                              'raw_reply': {},
-                              'reply_buffer': {}})
+                              'raw_reply': []})
 
     @classmethod
     def class_init(cls, command_dict, command_callback):
@@ -35,14 +33,9 @@ class RemoteCommandData(object):
     def _build_command_string(self):
         if hasattr(self, 'send_value_format'):
             self._human_to_machine()
-        self.output_string = (self.cmd_format.format(self.cmd)
-                              + self.value_string)
-        if hasattr(self, 'mode'):
-            self.output_string = ('{:02X}'.format(int((len(self.output_string)
-                                                       / 2) + 1))
-                                  + '{:02X}'.format(self.mode)
-                                  + self.output_string)
-        self.output_string = (self.prefix + self.output_string + self.suffix)
+        self.command_string = (self.cmd_format.format(self.cmd)
+                               + self.value_string)
+        self.output_string = (self.prefix + self.command_string + self.suffix)
 
     def _human_to_machine(self):
         if (self.value is None):
@@ -55,7 +48,7 @@ class RemoteCommandData(object):
             self.value = int(round(self.value / self.range['scale']))
         self.value_string = self.send_value_format.format(self.value)
 
-    def _machine_to_human(self, values):
+    def _machine_to_human(self, values, dev):
         print (values)
         if values[0] == 'ok':
             return values[0]
@@ -96,35 +89,20 @@ class RemoteCommandData(object):
         return len(s) - s.index('.') - 1
 
     def _compute_reply_regex(self):
-        r = self.reply_regex
-        if hasattr(self, 'payload'):
-            p = self.payload
-            p['length'] = ((p['encode'] * 2) * p['bytes'])
-            self.reply_regex_prefix = (self.reply_prefix
-                                       + '{:02X}'.format(int((p['length']
-                                                              / 2) + 3))
-                                       + '{:02X}'.format(self.mode + 0x40)
-                                       + '{:02X}'.format(self.cmd))
-            r += ('{' + str(p['length']) + '}')
-        else:
-            self.reply_regex_prefix = self.reply_prefix + self.cmd
-        self.reply_regex_string = ('^' + self.reply_regex_prefix + r)
+        self.reply_regex_prefix = self.reply_prefix + self.cmd
+        self.reply_regex_string = ('^' + self.reply_regex_prefix
+                                   + self.reply_regex)
+
+    def _compute_reply(self):
+        self.reply = self.raw_reply
 
     def _new_data_check(self, reply):
         if reply != self.reply_buffer:
-            reply = self.reply_buffer.copy()
+            reply = self.reply_buffer
             self.new_data = True
         else:
             self.new_data = False
         return reply
-
-    def _compute_reply(self):
-        if hasattr(self, 'single_uart') and self.single_uart:
-            for k in self.raw_reply:
-                self.reply = self.raw_reply[k]
-                self.dev = k
-        else:
-            self.reply = self.raw_reply
 
     def _callback(self):
         self.waiting_on_data = False
@@ -141,31 +119,20 @@ class RemoteCommandData(object):
             raise Exception('error uart {} returned bad string = {}'
                             .format(dev, value))
         value = re.sub(r'^' + self.reply_regex_prefix, '', value)
-        # print ('reply value = ' + str(value))
-        reply_regex_mod = ''
-        if hasattr(self, 'payload'):
-            reply_regex_mod = ('{' + str(self.payload['encode'] * 2) + '}')
-        self.reply_buffer[dev] = self._machine_to_human(
-            re.findall((self.reply_regex + reply_regex_mod), value))
-        self.complete[dev] = True
-        self.check_complete()
+        self.reply_buffer = self._machine_to_human(re.findall(
+            (self.reply_regex), value), dev)
+        self.complete = True
+        self.check_complete(dev)
 
     def start_commmand(self):
         if self.waiting_on_data:
             raise Exception('{} waiting on data still'.format(
                 self.command_name))
-        self.complete = {}
-        self.reply_buffer = {}
+        self.complete = False
         self.waiting_on_data = True
 
-    def check_complete(self):
-        done = None
-        for c in self.complete:
-            if self.complete[c] is True and (done is True or done is None):
-                done = True
-            else:
-                done = False
-        if done is True:
+    def check_complete(self, dev):
+        if self.complete is True:
             self.raw_reply = self._new_data_check(self.raw_reply)
             self._compute_reply()
             self._callback()
@@ -200,28 +167,16 @@ class RemoteAPI(threading.Thread):
         self.c = remote_command_data_class.class_init(self.config['command'],
                                                       self.command_callback)
 
-    def _check_callback_group_command(self, command_name, values, new_data):
-        if new_data and hasattr(self.c[command_name], 'parent_command'):
-            c = self.c[command_name]
-            p = self.c[c.parent_command]
-            p.add_data(c.cmd, c.reply, c.span)
-
     def command_callback(self, command_name, values, new_data):
         self.current_command = None
         if new_data:
             print ('{} = {}'.format(command_name, values))
 
     def get_command(self, dev):
-        c = None
         if (not self.command_queue.empty() and self.current_command is None):
             self.current_command = self.command_queue.get()
-        if (self.current_command is not None
-                and dev not in self.current_command.complete):
-            self.current_command.complete[dev] = False
-            c = self.current_command
-        if c is not None:
-            c.start_commmand()
-        return c
+            self.current_command.start_commmand()
+        return self.current_command
 
     def run_command(self, command_name, value=None):
             self.c[command_name].set_value(value)

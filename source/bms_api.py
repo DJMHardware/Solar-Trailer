@@ -31,6 +31,28 @@ class BMS_RemoteCommandData(remote_api.RemoteCommandData):
                 command_dict[k]['groupcmd'] = True
         return super().class_init(command_dict, command_callback)
 
+    def _build_command_string(self):
+        super()._build_command_string()
+        if hasattr(self, 'mode'):
+            self.command_string = (
+                '{:02X}'.format(int((len(self.command_string) / 2) + 1))
+                + '{:02X}'.format(self.mode)
+                + self.command_string)
+        self.output_string = (self.prefix + self.command_string + self.suffix)
+
+    def _compute_reply_regex(self):
+        r = self.reply_regex
+        p = self.payload
+        p['length'] = ((p['encode'] * 2) * p['bytes'])
+        self.reply_regex_prefix = (self.reply_prefix
+                                   + '{:02X}'.format(int((p['length']
+                                                          / 2) + 3))
+                                   + '{:02X}'.format(self.mode + 0x40)
+                                   + '{:02X}'.format(self.cmd))
+        r += ('{' + str(p['length']) + '}')
+        self.reply_regex += ('{' + str(self.payload['encode'] * 2) + '}')
+        self.reply_regex_string = ('^' + self.reply_regex_prefix + r)
+
     def start_commmand(self):
         super().start_commmand()
         if hasattr(self, 'groupcmd'):
