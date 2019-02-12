@@ -10,27 +10,25 @@ class AC_Charger_RemoteCommandData(remote_api.RemoteCommandData):
         self._compute_reply_regex()
         self.raw_reply = {}
         self.reply_buffer = {}
-        self.complete_list = {}
+        self.complete = {}
 
     def start_commmand(self):
         super().start_commmand()
-        self.complete_list = {}
+        self.complete = {}
         self.reply_buffer = {}
 
-    def check_complete(self, dev):
-        self.complete_list[dev] = True
-        self.complete = None
-        for k in self.complete_list:
-            if (self.complete_list[k] is True
-                    and (self.complete is True or self.complete is None)):
-                self.complete = True
+    def return_values(self, value, dev):
+        self.reply_buffer[dev] = self.extract_values(value, dev)
+        self.complete[dev] = True
+        done = None
+        for k in self.complete:
+            if (self.complete[k] is True
+                    and (done is True or done is None)):
+                done = True
             else:
-                self.complete = False
-        super().check_complete(dev)
-
-    def _machine_to_human(self, value, dev):
-        reply = super()._machine_to_human(value, dev)
-        return {dev: reply}
+                done = False
+        if done:
+            self._callback()
 
 
 class AC_Charger_API(remote_api.RemoteAPI):
@@ -48,10 +46,10 @@ class AC_Charger_API(remote_api.RemoteAPI):
         if (not self.command_queue.empty() and self.current_command is None):
             self.current_command = self.command_queue.get()
         if (self.current_command is not None
-                and dev not in self.current_command.complete_list):
-            self.current_command.complete_list[dev] = False
+                and dev not in self.current_command.complete):
+            self.current_command.complete[dev] = False
             c = self.current_command
-        if c is not None and not len(c.complete_list):
+        if c is not None and not len(c.complete):
             c.start_commmand()
         return c
 

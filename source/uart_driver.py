@@ -54,7 +54,7 @@ class Uart_Driver(threading.Thread):
                            + str(c.command_name) + ', '
                            + str(c.value))
                 try:
-                    c.extract_values(self.uart_IO(
+                    c.return_values(self.uart_IO(
                         c.output_string, c.suffix), self.dev)
                     time.sleep(0.01)
                 except Exception as e:

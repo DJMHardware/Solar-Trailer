@@ -18,8 +18,7 @@ class RemoteCommandData(object):
         self.__dict__.update(command_dict[command_name].copy())
         self.__dict__.update({'output_string': '',
                               'value_string': '',
-                              'reply': None,
-                              'raw_reply': []})
+                              'reply': None})
 
     @classmethod
     def class_init(cls, command_dict, command_callback):
@@ -48,8 +47,7 @@ class RemoteCommandData(object):
             self.value = int(round(self.value / self.range['scale']))
         self.value_string = self.send_value_format.format(self.value)
 
-    def _machine_to_human(self, values, dev):
-        print (values)
+    def _machine_to_human(self, values):
         if values[0] == 'ok':
             return values[0]
         if hasattr(self, 'Lookup_Table'):
@@ -88,13 +86,20 @@ class RemoteCommandData(object):
             return 0
         return len(s) - s.index('.') - 1
 
+    def extract_values(self, value, dev):
+        if not re.match(self.reply_regex_string, value):
+            raise Exception('error uart {} returned bad string = {}'
+                            .format(dev, value))
+        value = re.sub(r'^' + self.reply_regex_prefix, '', value)
+        return self._machine_to_human(re.findall(self.reply_regex, value))
+
     def _compute_reply_regex(self):
         self.reply_regex_prefix = self.reply_prefix + self.cmd
         self.reply_regex_string = ('^' + self.reply_regex_prefix
                                    + self.reply_regex)
 
     def _compute_reply(self):
-        self.reply = self.raw_reply
+        self.reply = self._new_data_check(self.reply)
 
     def _new_data_check(self, reply):
         if reply != self.reply_buffer:
@@ -105,6 +110,7 @@ class RemoteCommandData(object):
         return reply
 
     def _callback(self):
+        self._compute_reply()
         self.waiting_on_data = False
         self._command_callback(self.command_name, self.reply, self.new_data)
 
@@ -114,15 +120,9 @@ class RemoteCommandData(object):
                 self.value = value
                 self._build_command_string()
 
-    def extract_values(self, value, dev):
-        if not re.match(self.reply_regex_string, value):
-            raise Exception('error uart {} returned bad string = {}'
-                            .format(dev, value))
-        value = re.sub(r'^' + self.reply_regex_prefix, '', value)
-        self.reply_buffer = self._machine_to_human(re.findall(
-            (self.reply_regex), value), dev)
-        self.complete = True
-        self.check_complete(dev)
+    def return_values(self, value, dev):
+        self.reply_buffer = self.extract_values(value, dev)
+        self._callback()
 
     def start_commmand(self):
         if self.waiting_on_data:
@@ -130,12 +130,6 @@ class RemoteCommandData(object):
                 self.command_name))
         self.complete = False
         self.waiting_on_data = True
-
-    def check_complete(self, dev):
-        if self.complete is True:
-            self.raw_reply = self._new_data_check(self.raw_reply)
-            self._compute_reply()
-            self._callback()
 
 
 class RemoteAPI(threading.Thread):

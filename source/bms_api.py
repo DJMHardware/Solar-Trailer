@@ -33,11 +33,10 @@ class BMS_RemoteCommandData(remote_api.RemoteCommandData):
 
     def _build_command_string(self):
         super()._build_command_string()
-        if hasattr(self, 'mode'):
-            self.command_string = (
-                '{:02X}'.format(int((len(self.command_string) / 2) + 1))
-                + '{:02X}'.format(self.mode)
-                + self.command_string)
+        self.command_string = (
+            '{:02X}'.format(int((len(self.command_string) / 2) + 1))
+            + '{:02X}'.format(self.mode)
+            + self.command_string)
         self.output_string = (self.prefix + self.command_string + self.suffix)
 
     def _compute_reply_regex(self):
