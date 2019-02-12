@@ -1,16 +1,13 @@
 import threading
 import queue
 import sys
-import paho.mqtt.client as mqtt
 import time
-import serial
 import toml
-import json
 import os.path
 import re
 
 
-class Register(object):
+class RemoteCommandData(object):
 
     def __init__(self, command_name, command_dict, command_callback):
         self.command_name = command_name
@@ -19,21 +16,12 @@ class Register(object):
         self.waiting_on_data = False
         self.__dict__.update(command_dict['Default'].copy())
         self.__dict__.update(command_dict[command_name].copy())
-        print (command_dict[command_name])
         self.__dict__.update({'output_string': '',
                               'value_string': '',
                               'complete': {},
                               'reply': None,
                               'raw_reply': {},
                               'reply_buffer': {}})
-        if not hasattr(self, 'groupcmd'):
-            print ('cmd = 0x{:04X}'.format(self.cmd))
-            self._build_command_string()
-            self._compute_reply_regex()
-        else:
-            self.cmd_done = []
-            self.reply = []
-            self.reply_buffer = []
 
     @classmethod
     def class_init(cls, command_dict, command_callback):
@@ -41,20 +29,6 @@ class Register(object):
         for k in command_dict.copy():
             if k == 'Default':
                 continue
-            if 'cmds' in command_dict[k]:
-                i = 0
-                for cmd in command_dict[k]['cmds']:
-                    i += 1
-                    cmd_str = '0x{:04X}'.format(cmd)
-                    command_dict_c = command_dict.copy()
-                    command_dict_c[k + str(i)] = command_dict[k].copy()
-                    command_dict_c[k + str(i)]['cmd'] = cmd
-                    command_dict_c[k + str(i)]['parent_command'] = k
-                    command_dict_c[k + str(i)]['span'] = (command_dict[k]
-                                                          ['spans'][cmd_str])
-                    c[k + str(i)] = cls(k + str(i), command_dict_c,
-                                        command_callback)
-                command_dict[k]['groupcmd'] = True
             c[k] = cls(k, command_dict, command_callback)
         return c
 
@@ -82,6 +56,7 @@ class Register(object):
         self.value_string = self.send_value_format.format(self.value)
 
     def _machine_to_human(self, values):
+        print (values)
         if values[0] == 'ok':
             return values[0]
         if hasattr(self, 'Lookup_Table'):
@@ -181,9 +156,6 @@ class Register(object):
                 self.command_name))
         self.complete = {}
         self.reply_buffer = {}
-        if hasattr(self, 'groupcmd'):
-            self.cmd_done = []
-            self.reply_buffer = []
         self.waiting_on_data = True
 
     def check_complete(self):
@@ -198,36 +170,21 @@ class Register(object):
             self._compute_reply()
             self._callback()
 
-    def add_data(self, cmd, data, span):
-        if cmd not in self.cmd_done:
-            self.cmd_done.append(cmd)
-        for i in range(span[1] - len(self.reply_buffer)):
-            self.reply_buffer.append(None)
-        for i in range(span[1] - span[0] + 1):
-            self.reply_buffer[span[0] + i - 1] = data[i]
-        done = True
-        for cmd in self.cmds:
-            done = bool(done and cmd in self.cmd_done)
-        if done:
-            self.reply = self._new_data_check(self.reply)
-            self._command_callback(self.command_name,
-                                   self.reply,
-                                   self.new_data)
 
-
-class Control(threading.Thread):
+class RemoteAPI(threading.Thread):
     counter = 0
 
     @classmethod
-    def class_init(cls, config_file):
+    def class_init(cls, config_file, remote_command_data_class):
         cls.counter += 1
         threadID = 'control_' + str(cls.counter)
-        handle_control_t = cls(threadID, config_file)
+        handle_control_t = cls(threadID, config_file,
+                               remote_command_data_class)
         handle_control_t.daemon = True
         handle_control_t.start()
         return handle_control_t
 
-    def __init__(self, threadID, config_file):
+    def __init__(self, threadID, config_file, remote_command_data_class):
         threading.Thread.__init__(self)
         self.threadLock = threading.Lock()
         self.threadID = threadID
@@ -240,12 +197,8 @@ class Control(threading.Thread):
         with open(os.path.join(config_path, config_file)) as f:
             self.config = toml.load(f, _dict=dict)
 
-        self.client = mqtt.Client(self.config['mqtt']['client'])
-        self.client.connect(self.config['mqtt']['host'])
-        self.client.loop_start()
-        self.c = Register.class_init(self.config['command'],
-                                     self.command_callback)
-        self.handle_uart_t = Handle_uart.class_init(self)
+        self.c = remote_command_data_class.class_init(self.config['command'],
+                                                      self.command_callback)
 
     def _check_callback_group_command(self, command_name, values, new_data):
         if new_data and hasattr(self.c[command_name], 'parent_command'):
@@ -254,7 +207,6 @@ class Control(threading.Thread):
             p.add_data(c.cmd, c.reply, c.span)
 
     def command_callback(self, command_name, values, new_data):
-        self._check_callback_group_command(command_name, values, new_data)
         self.current_command = None
         if new_data:
             print ('{} = {}'.format(command_name, values))
@@ -272,11 +224,6 @@ class Control(threading.Thread):
         return c
 
     def run_command(self, command_name, value=None):
-        if 'cmds' in self.c[command_name].__dict__:
-            self.c[command_name].start_commmand()
-            for i in range(len(self.c[command_name].cmds)):
-                self.command_queue.put(self.c[command_name + str(i + 1)])
-        else:
             self.c[command_name].set_value(value)
             self.command_queue.put(self.c[command_name])
 
@@ -285,112 +232,3 @@ class Control(threading.Thread):
             # value = self.check_command_reply()
             print ('run control ')
             time.sleep(1)
-
-
-class Handle_uart(threading.Thread):
-    @classmethod
-    def class_init(cls, caller):
-        print ('init uarts')
-        handle_uart_t = {}
-        for key, value in caller.config['uarts'].items():
-            handle_uart_t[key] = cls(key, value, caller)
-            handle_uart_t[key].daemon = True
-            handle_uart_t[key].start()
-        return handle_uart_t
-
-    def __init__(self, threadID, value, caller):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.caller = caller
-        self.config = caller.config
-        self.dev = value['dev']
-        self.phy = value['phy']
-        print ('init ' + self.dev)
-        self.ser = serial.Serial(self.dev,
-                                 baudrate=self.config['uart']['baudrate'],
-                                 bytesize=self.config['uart']['bytesize'],
-                                 parity=self.config['uart']['parity'],
-                                 stopbits=self.config['uart']['stopbits'],
-                                 timeout=self.config['uart']['timeout'])
-        self.busy = False
-
-    def run(self):
-        i = 0
-        while True:
-            self.check_command_queue()
-            time.sleep(0.01)
-            if i > 100:
-                # print (self.control.command_list)
-                i = 0
-
-    def check_command_queue(self):
-        c = self.caller.get_command(self.dev)
-        if c is not None:
-            i = 0
-            while True:
-                if i == 0:
-                    print (self.dev + ' run command = '
-                           + str(c.command_name) + ', '
-                           + str(c.value))
-                else:
-                    print (self.dev + ' retry command = '
-                           + str(c.command_name) + ', '
-                           + str(c.value))
-                try:
-                    c.extract_values(self.uart_IO(
-                        c.output_string, c.suffix), self.dev)
-                    time.sleep(0.01)
-                except Exception as e:
-                    i += 1
-                    if i > 10:
-                        raise Exception(repr(e))
-                    time.sleep(.01)
-                    continue
-                break
-
-    def uart_IO(self, output, EOL_string):
-        timeout = 0
-        while (self.ser.out_waiting > 0 and self.ser.in_waiting > 0
-               and self.busy):
-            timeout += 1
-            if timeout > 20 and not self.busy:
-                self.ser.reset_output_buffer()
-                self.ser.reset_input_buffer()
-                timeout = 0
-                raise Exception('serial write timeout ' + str(self.dev))
-            time.sleep(0.01)
-        self.busy = True
-        self.ser.write(output.encode())
-        # print (self.dev + ' sent = ' + str(re.sub(EOL_string, '', output)))
-        endofline = False
-        timeout = 0
-        reply = ''
-        while not endofline:
-            if self.ser.in_waiting > 0:
-                r = self.ser.read()
-                reply += str(r, 'utf-8')
-                if re.search(EOL_string, reply):
-                    reply = re.sub(EOL_string, '', reply)
-                    endofline = True
-            else:
-                timeout += 1
-                if timeout > 20:
-                    endofline = True
-                    raise Exception('serial read timeout ' + str(self.dev))
-                time.sleep(0.01)
-        self.busy = False
-        return(reply)
-
-
-# control_test = Control.class_init('test.toml')
-# control_test.run_command('set_voltage', 12)
-# control_test.run_command('set_output', 1)
-# control_test.run_command('read_actual_voltage')
-# control_test.run_command('read_actual_working_time')
-control_bms = Control.class_init('bmscontrol.toml')
-control_bms.run_command('Relays Status')
-control_bms.run_command('Pack Voltage')
-control_bms.run_command('Cell Voltages')
-
-while True:
-    time.sleep(0.01)
