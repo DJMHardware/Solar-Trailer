@@ -199,28 +199,128 @@ topic = 'Inverterxx'
     cmd = 0x00
     payload = {bytes = 1, encode = 1, signed = false}
     range = {scale =1, min = 0, max = 255}
-    Lookup_Table =[{key = 0x00, name = 'Default'},
+    Lookup_Table =[{key = 0x00, name = 'Default', Default = 0x00},
                   {mask = 0x01, name = 'Inverter_ON_OFF'},
                   {mask = 0x02, name = 'Charger_ON_OFF'},
                   {mask = 0x0a, name = 'EQ_Mode'}]
 
-    [command.write.'']
-    cmd =
+    [command.write.'Search_watts']
+    cmd = 0x01
     payload = {bytes = 1, encode = 1, signed = false}
-    range = {scale =1, min = 0, max = 255}
-    Lookup_Table =[{
+    range = {scale =1, min = 5, max = 60}
+    Lookup_Table =[{key = 0x00, name ='Disable', Default = 0x00}]
 
-    }]
-
-    [command.write.'']
-    cmd =
+    [command.write.'Battery_size']
+    cmd = 0x02
+    Default = 20
     payload = {bytes = 1, encode = 1, signed = false}
-    range = {scale =1, min = 0, max = 255}
-    Lookup_Table =[{
+    range = {scale =10, min = 200, max = 1200}
 
-      }]
+    [command.write.'Battery_Type']
+    cmd = 0x03
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {min = 128, max = 255}
+    scale = {12 = 0.1, 24 = 0.2, 48 = 0.4}
+    Lookup_Table =[{key = 0x02, name ='Gel'},
+                  {key = 0x04, name ='Flooded'},
+                  {key = 0x08, name ='AGM'},
+                  {key = 0x0a, name ='AGM2'},
+                  {above = 100, name = 'Custom_Absorb', Default = 148}]
 
-    [command.write.'']
-      cmd =
+    [command.write.'DC_Charger_Amps']
+    cmd = 0x04
+    Default = 10
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =10, min = 0, max = 100, steps = 10}
+
+    [command.write.'AC_shore_amps']
+    cmd = 0x05
+    Default = 15
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 5, max = 60}
+
+    [command.write.'Remote_revision']
+      cmd = 0x06
+      Default = 3.6
       payload = {bytes = 1, encode = 1, signed = false}
-      range = {scale =1, min = 0, max = 255}
+      range = {scale =0.1, min = 3, max = 25.5}
+
+    [command.write.'Force_Charge']
+    cmd = 0x07
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Default = 0x00
+    Lookup_Table =[{mask = 0x10, name = 'Disable Refloat'},
+                  {mask = 0x20, name = 'Force Silent'},
+                  {mask = 0x40, name = 'Force Float'},
+                  {mask = 0x80, name = 'Force Bulk'}]
+
+    [command.write.'Auto_Genstart']
+    cmd = 0x08
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 5}
+    Lookup_Table =[{key = 0x00, name = 'Off', Default = 0x00},
+                  {key = 0x01, name = 'Enable'},
+                  {key = 0x02, name = 'Test'},
+                  {key = 0x04, name = 'Enable_with_Quiet_Time'},
+                  {key = 0x05, name = 'On'}]
+
+    [command.write.'Low_Battery_Cut_Out']
+      cmd = 0x09
+      payload = {bytes = 1, encode = 1, signed = false}
+      range = {}
+      Default = {12 = 10, 24 = 20, 48 = 40}
+      min = {12 = 9, 24 = 19, 48 = 38}
+      max = {12 = 16, 24 = 25.5, 48 = 51}
+      scale = {12 = 0.1, 24 = 0.1, 48 = 0.2}
+
+    [command.write.'VAC_cut_out_voltage']
+    cmd = 0x0a
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{key = 110, name = '60VAC'},
+                  {key = 122, name = '65VAC'},
+                  {key = 135, name = '70VAC'},
+                  {key = 145, name = '75VAC'},
+                  {key = 155, name = '80VAC', Default = 155},
+                  {key = 165, name = '85VAC'},
+                  {key = 175, name = '90VAC'},
+                  {key = 182, name = '95VAC'},
+                  {key = 190, name = '100VAC'},
+                  {mask = 255, name = 'EMS_over_ride_open_relay'}]
+
+    [command.write.'Float_Volts']
+    cmd = 0x0b
+    Default = {12 = 13.2, 24 = 26.4, 48 = 52.8}
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    min = {12 = 12, 24 = 24, 48 = 48}
+    max = {12 = 16, 24 = 32, 48 = 60}
+    scale = {12 = 0.1, 24 = 0.2, 48 = 0.4}
+
+    [command.write.'EQ_Volts']
+    cmd = 0x0c
+    Default = 0x00
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {}
+    min = {12 = 0, 24 = 0, 48 = 0}
+    max = {12 = 2, 24 = 4, 48 = 8}
+    scale = {12 = 0.1, 24 = 0.2, 48 = 0.4}
+
+    [command.write.'Absorb_Time']
+    cmd = 0x0d
+    Default = 20
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =0.1, min = 0, max = 25}
+
+    [command.write.'Hours']
+    cmd = 0x0e
+    Default = 12
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 23}
+
+    [command.write.'Minutes']
+    cmd = 0x0f
+    Default = 0
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 59}
