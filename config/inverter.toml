@@ -24,164 +24,203 @@ topic = 'Inverterxx'
   suffix = ""
   cmd_format = ''
   encoding_base = 0xFF
-  value_reply = false
   reply_regex = ''
 
-  [command.'Inverter_Status']
-  cmd = 0x00
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
-  Lookup_Table =[{mask = 0x00, name = 'ChargerStandby'},
-                {mask = 0x01, name = 'EQMODE'},
-                {mask = 0x02, name = 'FLOATMODE'},
-                {mask = 0x04, name = 'ABSORBMODE'},
-                {mask = 0x08, name = 'BULKMODE'},
-                {mask = 0x09, name = 'BATSAVERMODE'},
-                {mask = 0x10, name = 'CHARGEMODE'},
-                {mask = 0x20, name = 'Off'},
-                {mask = 0x40, name = 'INVERTMODE'},
-                {mask = 0x50, name = 'Inverter Standby'},
-                {mask = 0x80, name = 'SEARCHMODE'}]
+  [command.read]
 
-  [command.'Inverter_Fault']
-  cmd = 0x01
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
-  Lookup_Table =[{key = 0x00, name = 'No_ERROR'},
-                {key = 0x01, name = 'STUCKRELAY'},
-                {key = 0x02, name = 'DC_OVERLOAD'},
-                {key = 0x03, name = 'AC_OVERLOAD'},
-                {key = 0x04, name = 'DEAD BAT'},
-                {key = 0x05, name = 'BACKFEED'},
-                {key = 0x08, name = 'LOWBAT'},
-                {key = 0x09, name = 'HIGHBAT'},
-                {key = 0x0A, name = 'HIGHACVOLTS'},
-                {key = 0x10, name = 'BAD_BRIDGE'},
-                {key = 0x12, name = 'NTC_FAULT'},
-                {key = 0x13, name = 'FET_OVERLOAD'},
-                {key = 0x14, name = 'INTERNAL_FAULT4'},
-                {key = 0x16, name = 'STACKER_MODE_FAULT'},
-                {key = 0x17, name = 'STACKER_NO_CLK_FAULT'},
-                {key = 0x18, name = 'STACKER_CLK_PH_FAULT'},
-                {key = 0x19, name = 'STACKER_PH_LOSS_FAULT'},
-                {key = 0x20, name = 'OVERTEMP'},
-                {key = 0x21, name = 'RELAY_FAULT'},
-                {key = 0x80, name = 'CHARGER_FAULT'},
-                {key = 0x81, name = 'HIBATEMP'},
-                {key = 0x90, name = 'OPEN_SELCO_TCO'},
-                {key = 0x91, name = 'CB3_OPEN_FAULT'}]
+    [command.read.'Default']
+    value_reply = true
 
-  [command.''DC_volts'']
-  cmd = 0x02
-  payload = {bytes = 2, encode = 1, signed = false}
-  range = {scale =0.1, min = 0, max = 100}
+    [command.read.'Inverter_Status']
+    cmd = 0x00
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{mask = 0x00, name = 'ChargerStandby'},
+                  {mask = 0x01, name = 'EQMODE'},
+                  {mask = 0x02, name = 'FLOATMODE'},
+                  {mask = 0x04, name = 'ABSORBMODE'},
+                  {mask = 0x08, name = 'BULKMODE'},
+                  {mask = 0x09, name = 'BATSAVERMODE'},
+                  {mask = 0x10, name = 'CHARGEMODE'},
+                  {mask = 0x20, name = 'Off'},
+                  {mask = 0x40, name = 'INVERTMODE'},
+                  {mask = 0x50, name = 'Inverter Standby'},
+                  {mask = 0x80, name = 'SEARCHMODE'}]
 
-  [command.'DC_amps']
-  cmd = 0x04
-  payload = {bytes = 2, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 500}
+    [command.read.'Inverter_Fault']
+    cmd = 0x01
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{key = 0x00, name = 'No_ERROR'},
+                  {key = 0x01, name = 'STUCKRELAY'},
+                  {key = 0x02, name = 'DC_OVERLOAD'},
+                  {key = 0x03, name = 'AC_OVERLOAD'},
+                  {key = 0x04, name = 'DEAD BAT'},
+                  {key = 0x05, name = 'BACKFEED'},
+                  {key = 0x08, name = 'LOWBAT'},
+                  {key = 0x09, name = 'HIGHBAT'},
+                  {key = 0x0A, name = 'HIGHACVOLTS'},
+                  {key = 0x10, name = 'BAD_BRIDGE'},
+                  {key = 0x12, name = 'NTC_FAULT'},
+                  {key = 0x13, name = 'FET_OVERLOAD'},
+                  {key = 0x14, name = 'INTERNAL_FAULT4'},
+                  {key = 0x16, name = 'STACKER_MODE_FAULT'},
+                  {key = 0x17, name = 'STACKER_NO_CLK_FAULT'},
+                  {key = 0x18, name = 'STACKER_CLK_PH_FAULT'},
+                  {key = 0x19, name = 'STACKER_PH_LOSS_FAULT'},
+                  {key = 0x20, name = 'OVERTEMP'},
+                  {key = 0x21, name = 'RELAY_FAULT'},
+                  {key = 0x80, name = 'CHARGER_FAULT'},
+                  {key = 0x81, name = 'HIBATEMP'},
+                  {key = 0x90, name = 'OPEN_SELCO_TCO'},
+                  {key = 0x91, name = 'CB3_OPEN_FAULT'}]
 
-  [command.'AC_volts_out']
-  cmd = 0x06
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 150}
+    [command.read.''DC_volts'']
+    cmd = 0x02
+    payload = {bytes = 2, encode = 1, signed = false}
+    range = {scale =0.1, min = 0, max = 100}
 
-  [command.'AC_Volts_in']
-  cmd = 0x07
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
+    [command.read.'DC_amps']
+    cmd = 0x04
+    payload = {bytes = 2, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 500}
 
-  [command.'Inverter_LED']
-  cmd = 0x08
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 1}
+    [command.read.'AC_volts_out']
+    cmd = 0x06
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 150}
 
-  [command.'Charger_LED']
-  cmd = 0x09
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
+    [command.read.'AC_Volts_in']
+    cmd = 0x07
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
 
-  [command.'Inverter_rev']
-  cmd = 0x0A
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =0.1, min = 0, max = 25}
+    [command.read.'Inverter_LED']
+    cmd = 0x08
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 1}
 
-  [command.'Battery_temp']
-  cmd = 0x0B
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 150}
+    [command.read.'Charger_LED']
+    cmd = 0x09
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
 
-  [command.'Transformer_temp']
-  cmd = 0x0C
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 150}
+    [command.read.'Inverter_rev']
+    cmd = 0x0A
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =0.1, min = 0, max = 25}
 
-  [command.'FET_temp']
-  cmd = 0x0D
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 150}
+    [command.read.'Battery_temp']
+    cmd = 0x0B
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 150}
 
-  [command.'Inverter_Model']
-  cmd = 0x0E
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
-  Lookup_Table =[{key = 0x06, name = {'Model' = 'MM612', 'Voltage' = 12}},
-                {key = 0x07, name = {'Model' = 'MM612-AE', 'Voltage' = 12}},
-                {key = 0x08, name = {'Model' = 'MM1212', 'Voltage' = 12}},
-                {key = 0x09, name = {'Model' = 'MMS1012', 'Voltage' = 12}},
-                {key = 0x0A, name = {'Model' = 'MM1012E', 'Voltage' = 12}},
-                {key = 0x0B, name = {'Model' = 'MM1512', 'Voltage' = 12}},
-                {key = 0x0F, name = {'Model' = 'ME1512', 'Voltage' = 12}},
-                {key = 0x14, name = {'Model' = 'ME2012', 'Voltage' = 12}},
-                {key = 0x19, name = {'Model' = 'ME2512', 'Voltage' = 12}},
-                {key = 0x1E, name = {'Model' = 'ME3112', 'Voltage' = 12}},
-                {key = 0x23, name = {'Model' = 'MS2012', 'Voltage' = 12}},
-                {key = 0x28, name = {'Model' = 'MS2012E', 'Voltage' = 12}},
-                {key = 0x2D, name = {'Model' = 'MS2812', 'Voltage' = 12}},
-                {key = 0x2F, name = {'Model' = 'MS2712E', 'Voltage' = 12}},
-                {key = 0x35, name = {'Model' = 'MM1324E', 'Voltage' = 24}},
-                {key = 0x36, name = {'Model' = 'MM1524', 'Voltage' = 24}},
-                {key = 0x37, name = {'Model' = 'RD1824', 'Voltage' = 24}},
-                {key = 0x3B, name = {'Model' = 'RD2624E', 'Voltage' = 24}},
-                {key = 0x3F, name = {'Model' = 'RD2824', 'Voltage' = 24}},
-                {key = 0x45, name = {'Model' = 'RD4024E', 'Voltage' = 24}},
-                {key = 0x4A, name = {'Model' = 'RD3924', 'Voltage' = 24}},
-                {key = 0x5A, name = {'Model' = 'MS4124E', 'Voltage' = 24}},
-                {key = 0x5B, name = {'Model' = 'MS2024', 'Voltage' = 24}},
-                {key = 0x69, name = {'Model' = 'MS4024', 'Voltage' = 24}},
-                {key = 0x6A, name = {'Model' = 'MS4024AE', 'Voltage' = 24}},
-                {key = 0x6B, name = {'Model' = 'MS4024PAE', 'Voltage' = 24}},
-                {key = 0x6F, name = {'Model' = 'MS4448AE', 'Voltage' = 48}},
-                {key = 0x70, name = {'Model' = 'MS3748AEJ', 'Voltage' = 48}},
-                {key = 0x73, name = {'Model' = 'MS4448PAE', 'Voltage' = 48}},
-                {key = 0x74, name = {'Model' = 'MS3748PAEJ', 'Voltage' = 48}}]
+    [command.read.'Transformer_temp']
+    cmd = 0x0C
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 150}
 
-  [command.'Stack_Mode']
-  cmd = 0x0F
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
-  Lookup_Table =[{key = 0x00, 'Standalone unit'},
-                {key = 0x01, 'Parallel stack - master'},
-                {key = 0x02, 'Parallel stack - slave'},
-                {key = 0x04, 'Series stack - master'},
-                {key = 0x08, 'Series stack - slave'}]
+    [command.read.'FET_temp']
+    cmd = 0x0D
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 150}
 
-  [command.'AC_amps_in']
-  cmd = 0x10
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
+    [command.read.'Inverter_Model']
+    cmd = 0x0E
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{key = 0x06, name = {'Model' = 'MM612', 'Voltage' = 12}},
+                  {key = 0x07, name = {'Model' = 'MM612-AE', 'Voltage' = 12}},
+                  {key = 0x08, name = {'Model' = 'MM1212', 'Voltage' = 12}},
+                  {key = 0x09, name = {'Model' = 'MMS1012', 'Voltage' = 12}},
+                  {key = 0x0A, name = {'Model' = 'MM1012E', 'Voltage' = 12}},
+                  {key = 0x0B, name = {'Model' = 'MM1512', 'Voltage' = 12}},
+                  {key = 0x0F, name = {'Model' = 'ME1512', 'Voltage' = 12}},
+                  {key = 0x14, name = {'Model' = 'ME2012', 'Voltage' = 12}},
+                  {key = 0x19, name = {'Model' = 'ME2512', 'Voltage' = 12}},
+                  {key = 0x1E, name = {'Model' = 'ME3112', 'Voltage' = 12}},
+                  {key = 0x23, name = {'Model' = 'MS2012', 'Voltage' = 12}},
+                  {key = 0x28, name = {'Model' = 'MS2012E', 'Voltage' = 12}},
+                  {key = 0x2D, name = {'Model' = 'MS2812', 'Voltage' = 12}},
+                  {key = 0x2F, name = {'Model' = 'MS2712E', 'Voltage' = 12}},
+                  {key = 0x35, name = {'Model' = 'MM1324E', 'Voltage' = 24}},
+                  {key = 0x36, name = {'Model' = 'MM1524', 'Voltage' = 24}},
+                  {key = 0x37, name = {'Model' = 'RD1824', 'Voltage' = 24}},
+                  {key = 0x3B, name = {'Model' = 'RD2624E', 'Voltage' = 24}},
+                  {key = 0x3F, name = {'Model' = 'RD2824', 'Voltage' = 24}},
+                  {key = 0x45, name = {'Model' = 'RD4024E', 'Voltage' = 24}},
+                  {key = 0x4A, name = {'Model' = 'RD3924', 'Voltage' = 24}},
+                  {key = 0x5A, name = {'Model' = 'MS4124E', 'Voltage' = 24}},
+                  {key = 0x5B, name = {'Model' = 'MS2024', 'Voltage' = 24}},
+                  {key = 0x69, name = {'Model' = 'MS4024', 'Voltage' = 24}},
+                  {key = 0x6A, name = {'Model' = 'MS4024AE', 'Voltage' = 24}},
+                  {key = 0x6B, name = {'Model' = 'MS4024PAE', 'Voltage' = 24}},
+                  {key = 0x6F, name = {'Model' = 'MS4448AE', 'Voltage' = 48}},
+                  {key = 0x70, name = {'Model' = 'MS3748AEJ', 'Voltage' = 48}},
+                  {key = 0x73, name = {'Model' = 'MS4448PAE', 'Voltage' = 48}},
+                  {key = 0x74, name = {'Model' = 'MS3748PAEJ', 'Voltage' = 48}}]
 
-  [command.'AC_amps_out']
-  cmd = 0x11
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =0.1, min = 40, max = 80}
+    [command.read.'Stack_Mode']
+    cmd = 0x0F
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{key = 0x00, 'Standalone unit'},
+                  {key = 0x01, 'Parallel stack - master'},
+                  {key = 0x02, 'Parallel stack - slave'},
+                  {key = 0x04, 'Series stack - master'},
+                  {key = 0x08, 'Series stack - slave'}]
 
-  [command.''AC_Hz'']
-  cmd = 0x12
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 255}
+    [command.read.'AC_amps_in']
+    cmd = 0x10
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
 
-  [command.''Not_used'']
-  cmd = 0x14
-  payload = {bytes = 1, encode = 1, signed = false}
-  range = {scale =1, min = 0, max = 0}
+    [command.read.'AC_amps_out']
+    cmd = 0x11
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =0.1, min = 40, max = 80}
+
+    [command.read.''AC_Hz'']
+    cmd = 0x12
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+
+    [command.read.''Not_used'']
+    cmd = 0x14
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 0}
+
+  [command.write]
+
+    [command.write.'Default']
+    value_reply = true
+
+    [command.write.'Inverter_State']
+    cmd = 0x00
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{key = 0x00, name = 'Default'},
+                  {mask = 0x01, name = 'Inverter_ON_OFF'},
+                  {mask = 0x02, name = 'Charger_ON_OFF'},
+                  {mask = 0x0a, name = 'EQ_Mode'}]
+
+    [command.write.'']
+    cmd =
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{
+
+    }]
+
+    [command.write.'']
+    cmd =
+    payload = {bytes = 1, encode = 1, signed = false}
+    range = {scale =1, min = 0, max = 255}
+    Lookup_Table =[{
+
+      }]
+
+    [command.write.'']
+      cmd =
+      payload = {bytes = 1, encode = 1, signed = false}
+      range = {scale =1, min = 0, max = 255}
