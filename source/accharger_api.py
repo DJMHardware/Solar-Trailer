@@ -33,12 +33,15 @@ class AC_Charger_RemoteCommandData(remote_api.RemoteCommandData):
 
 class AC_Charger_API(remote_api.RemoteAPI):
     @classmethod
-    def class_init(cls):
-        return super().class_init('accharger.toml',
-                                  AC_Charger_RemoteCommandData)
+    def class_init(cls,
+                   config_file='accharger.toml',
+                   remote_command_data_class=AC_Charger_RemoteCommandData,
+                   threaded=False):
+        return super().class_init(config_file, remote_command_data_class,
+                                  threaded)
 
-    def __init__(self, threadID, config_file, remote_command_data_class):
-        super().__init__(threadID, config_file, remote_command_data_class)
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
         self.handle_uart_t = uart_driver.Uart_Driver.class_init(self)
 
     def get_command(self, dev):
@@ -55,10 +58,13 @@ class AC_Charger_API(remote_api.RemoteAPI):
 
 
 control_test = AC_Charger_API.class_init()
-control_test.run_command('set_voltage', 12)
+control_test.run_command('set_voltage', 53)
+control_test.run_command('set_current', 8)
 control_test.run_command('set_output', 1)
 control_test.run_command('read_actual_voltage')
 control_test.run_command('read_actual_working_time')
 
 while True:
-    time.sleep(0.01)
+    control_test.run_command('read_actual_voltage')
+    control_test.run_command('read_actual_current')
+    time.sleep(1)

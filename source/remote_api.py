@@ -136,19 +136,22 @@ class RemoteAPI(threading.Thread):
     counter = 0
 
     @classmethod
-    def class_init(cls, config_file, remote_command_data_class):
+    def class_init(cls, config_file, remote_command_data_class, threaded=True):
         cls.counter += 1
         threadID = 'control_' + str(cls.counter)
         handle_control_t = cls(threadID, config_file,
-                               remote_command_data_class)
-        handle_control_t.daemon = True
-        handle_control_t.start()
+                               remote_command_data_class, threaded)
+        if threaded:
+            handle_control_t.daemon = True
+            handle_control_t.start()
         return handle_control_t
 
-    def __init__(self, threadID, config_file, remote_command_data_class):
-        threading.Thread.__init__(self)
-        self.threadLock = threading.Lock()
-        self.threadID = threadID
+    def __init__(self, threadID, config_file,
+                 remote_command_data_class, threaded):
+        if threaded:
+            threading.Thread.__init__(self)
+            self.threadLock = threading.Lock()
+            self.threadID = threadID
         self.command_queue = queue.Queue()
         self.current_command = None
         config_path = os.path.join((os.path.split

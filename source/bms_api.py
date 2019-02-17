@@ -77,11 +77,15 @@ class BMS_RemoteCommandData(remote_api.RemoteCommandData):
 
 class BMS_API(remote_api.RemoteAPI):
     @classmethod
-    def class_init(cls):
-        return super().class_init('bmscontrol.toml', BMS_RemoteCommandData)
+    def class_init(cls,
+                   config_file='bmscontrol.toml',
+                   remote_command_data_class=BMS_RemoteCommandData,
+                   threaded=False):
+        return super().class_init(config_file, remote_command_data_class,
+                                  threaded)
 
-    def __init__(self, threadID, config_file, remote_command_data_class):
-        super().__init__(threadID, config_file, remote_command_data_class)
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
         self.handle_uart_t = uart_driver.Uart_Driver.class_init(self)
 
     def _check_callback_group_command(self, command_name, values, new_data):
@@ -105,6 +109,7 @@ class BMS_API(remote_api.RemoteAPI):
 
 control_bms = BMS_API.class_init()
 control_bms.run_command('Relays Status')
+control_bms.run_command('Pack State of Charge')
 control_bms.run_command('Pack Voltage')
 control_bms.run_command('Cell Voltages')
 

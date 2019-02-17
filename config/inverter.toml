@@ -8,7 +8,7 @@ stopbits = 1
 timeout = 0.1
 
 [uarts]
-uart0 = {dev = '/dev/ttyUSB0', phy = 0}
+uart0 = {dev = '/dev/ttyUSB0'}
 
 [mqtt]
 client = 'Inverter_py'
