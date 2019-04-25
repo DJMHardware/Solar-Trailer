@@ -58,10 +58,12 @@ class AC_Charger_API(remote_api.RemoteAPI):
 
 
 control_test = AC_Charger_API.class_init()
-control_test.run_command('set_voltage', 53)
-control_test.run_command('set_current', 8)
+control_test.run_command('set_voltage', 56)
+control_test.run_command('set_current', 2)
 control_test.run_command('set_output', 1)
+control_test.run_command('set_auto_output', 1)
 control_test.run_command('read_actual_voltage')
+control_test.run_command('read_actual_current')
 control_test.run_command('read_actual_working_time')
 
 while True:

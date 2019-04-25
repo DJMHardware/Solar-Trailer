@@ -10,8 +10,8 @@ stopbits = 1
 timeout = 0
 
 [uarts]
-# uart0 = { phy = 0, dev = "/dev/ttyUSB2"}
-# uart1 = { phy = 0, dev = "/dev/ttyUSB3"}
+uart0 = { phy = 0, dev = "/dev/ttyUSB2"}
+uart1 = { phy = 0, dev = "/dev/ttyUSB3"}
 uart2 = { phy = 1, dev = "/dev/ttyUSB4"}
 uart3 = { phy = 1, dev = "/dev/ttyUSB5"}
 
