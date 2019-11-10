@@ -55,9 +55,10 @@ class Uart_Driver(threading.Thread):
                            + str(c.value))
                 try:
                     c.return_values(self.uart_IO(
-                        c.output_string, c.suffix), self.dev)
+                        c.output_string[self.dev], c.suffix), self.dev)
                     time.sleep(0.01)
                 except Exception as e:
+                    print(repr(e))
                     i += 1
                     if i > 10:
                         raise Exception(repr(e))
@@ -78,7 +79,7 @@ class Uart_Driver(threading.Thread):
             time.sleep(0.01)
         self.busy = True
         self.ser.write(output.encode())
-        # print (self.dev + ' sent = ' + str(re.sub(EOL_string, '', output)))
+        print (self.dev + ' sent = ' + str(re.sub(EOL_string, '', output)))
         endofline = False
         timeout = 0
         reply = ''

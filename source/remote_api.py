@@ -16,8 +16,10 @@ class RemoteCommandData(object):
         self.waiting_on_data = False
         self.__dict__.update(command_dict['Default'].copy())
         self.__dict__.update(command_dict[command_name].copy())
-        self.__dict__.update({'output_string': '',
-                              'value_string': '',
+        self.__dict__.update({'output_string': {},
+                              'value_string': {},
+                              'command_string': {},
+                              'waiting_on_data': {},
                               'reply': None})
 
     @classmethod
@@ -29,23 +31,27 @@ class RemoteCommandData(object):
             c[k] = cls(k, command_dict, command_callback)
         return c
 
-    def _build_command_string(self):
+    def _build_command_string(self, value, dev):
         if hasattr(self, 'send_value_format'):
-            self._human_to_machine()
-        self.command_string = (self.cmd_format.format(self.cmd)
-                               + self.value_string)
-        self.output_string = (self.prefix + self.command_string + self.suffix)
+            self.value_string[dev] = self._human_to_machine(value)
+        else:
+            self.value_string[dev] = ''
+        self.command_string[dev] = (self.cmd_format.format(self.cmd)
+                                    + self.value_string[dev])
+        self.output_string[dev] = (self.prefix + self.command_string[dev]
+                                   + self.suffix)
+        print('output string {}'.format(self.output_string))
 
-    def _human_to_machine(self):
-        if (self.value is None):
-            self.value = 0
-        if self.value < self.range['min']:
-            self.value = self.range['min']
-        if self.value > self.range['max']:
-            self.value = self.range['max']
+    def _human_to_machine(self, value):
+        if (value is None):
+            value = 0
+        if value < self.range['min']:
+            value = self.range['min']
+        if value > self.range['max']:
+            value = self.range['max']
         if self.range['scale'] is not 1:
-            self.value = int(round(self.value / self.range['scale']))
-        self.value_string = self.send_value_format.format(self.value)
+            value = int(round(self.value / self.range['scale']))
+        return self.send_value_format.format(value)
 
     def _machine_to_human(self, values):
         if values[0] == 'ok':
@@ -99,37 +105,37 @@ class RemoteCommandData(object):
                                    + self.reply_regex)
 
     def _compute_reply(self):
-        self.reply = self._new_data_check(self.reply)
+        self.reply = self._new_data_check(self.reply_buffer)
 
     def _new_data_check(self, reply):
-        if reply != self.reply_buffer:
-            reply = self.reply_buffer
+        if reply != self.reply:
             self.new_data = True
         else:
             self.new_data = False
         return reply
 
-    def _callback(self):
+    def _callback(self, dev):
+        print('_callback {}'.format(dev))
         self._compute_reply()
-        self.waiting_on_data = False
-        self._command_callback(self.command_name, self.reply, self.new_data)
+        self.waiting_on_data[dev] = False
+        self._command_callback(self.command_name, dev,
+                               self.reply, self.new_data)
 
-    def set_value(self, value):
-        if value is not None:
-            if value != self.value:
-                self.value = value
-                self._build_command_string()
+    def set_value(self, value, dev):
+        self.value = value
+        self._build_command_string(value, dev)
 
     def return_values(self, value, dev):
         self.reply_buffer = self.extract_values(value, dev)
-        self._callback()
+        self._callback(dev)
 
-    def start_commmand(self):
-        if self.waiting_on_data:
-            raise Exception('{} waiting on data still'.format(
-                self.command_name))
+    def start_commmand(self, dev=None):
+        print('********{} = {}'.format(self.command_name, self.complete))
+        if hasattr(self.waiting_on_data, dev) and self.waiting_on_data[dev]:
+            raise Exception('{} {} waiting on data still'
+                            .format(dev, self.command_name))
         self.complete = False
-        self.waiting_on_data = True
+        self.waiting_on_data[dev] = True
 
 
 class RemoteAPI(threading.Thread):
@@ -152,32 +158,57 @@ class RemoteAPI(threading.Thread):
             threading.Thread.__init__(self)
             self.threadLock = threading.Lock()
             self.threadID = threadID
-        self.command_queue = queue.Queue()
-        self.current_command = None
         config_path = os.path.join((os.path.split
                                     (os.path.split
                                      (sys.argv[0])[0])[0]),
                                    'config')
         with open(os.path.join(config_path, config_file)) as f:
             self.config = toml.load(f, _dict=dict)
+        self.command_queue = {}
+        self.current_command = {}
+        for uart in self.config['uarts']:
+            self.current_command[self.config['uarts'][uart]['dev']] = None
+            self.command_queue[self.config['uarts']
+                               [uart]['dev']] = queue.Queue()
 
         self.c = remote_command_data_class.class_init(self.config['command'],
                                                       self.command_callback)
 
-    def command_callback(self, command_name, values, new_data):
-        self.current_command = None
+    def command_callback(self, command_name, dev, values, new_data):
+        self.command_queue[dev].task_done()
+        print('done {} {}'.format(self.command_queue[dev].qsize(), dev))
+        self.current_command[dev] = None
         if new_data:
-            print ('{} = {}'.format(command_name, values))
+            print('{} = {}'.format(command_name, values))
 
     def get_command(self, dev):
-        if (not self.command_queue.empty() and self.current_command is None):
-            self.current_command = self.command_queue.get()
-            self.current_command.start_commmand()
-        return self.current_command
+        if (not self.command_queue[dev].empty() and self.current_command[dev] is None):
+            temp = self.command_queue[dev].get()
+            print('get {} {} {}'.format(
+                self.command_queue[dev].qsize(), temp['command_name'], dev))
+            self.current_command[dev] = temp['c'][temp['command_name']]
+            self.current_command[dev].set_value(temp['value'], dev)
+            #self.current_command[dev].start_commmand(dev)
+        return self.current_command[dev]
 
-    def run_command(self, command_name, value=None):
-            self.c[command_name].set_value(value)
-            self.command_queue.put(self.c[command_name])
+    def run_command(self, command_name, value=None, dev=None):
+        if dev is not None:
+            dev = self.config['uarts'][dev]['dev']
+            self.queue_command(command_name, value, dev)
+        else:
+            for uart in self.config['uarts']:
+                self.queue_command(command_name, value, self.config['uarts']
+                                   [uart]['dev'])
+        print('command = {} dev = {}'.format(command_name, dev))
+
+    def queue_command(self, command_name, value=None, dev=None):
+        self.command_queue[dev].put({'c': self.c,
+                                     'command_name': command_name,
+                                     'value': value,
+                                     'dev': dev})
+        print('put {} {} {}'.format(self.command_queue[dev].qsize(),
+                                    command_name, dev))
+
 
     def run(self):
         while True:

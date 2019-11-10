@@ -1,3 +1,4 @@
+import queue
 import remote_api
 import uart_driver
 import time
@@ -102,7 +103,11 @@ class BMS_API(remote_api.RemoteAPI):
         if hasattr(self.c[command_name], 'cmds'):
             self.c[command_name].start_commmand()
             for i in range(len(self.c[command_name].cmds)):
-                self.command_queue.put(self.c[command_name + str(i + 1)])
+                temp = {}
+                temp['c'] = self.c
+                temp['command_name'] = command_name + str(i + 1)
+                temp['value'] = value
+                self.command_queue.put(temp)
         else:
             super().run_command(command_name, value)
 
