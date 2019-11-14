@@ -2,6 +2,17 @@
 
 title = "48v Charger configuration"
 
+[temperature]
+base_path = '/sys/bus/w1/devices'
+sub_path = '' # '/hwmon/hwmon3'
+temp_file = 'w1_slave' # 'temp1_input'
+
+[temperature_devices]
+temp0 = { id = 0, phy = 0, dev = "28-00000a91c123"}
+temp1 = { id = 1, phy = 0, dev = "28-00000a92406c"}
+temp2 = { id = 2, phy = 1, dev = "28-00000a930dc2"}
+temp3 = { id = 3, phy = 2, dev = "28-00000b1f4fd4"}
+
 [uart]
 baudrate = 4800
 bytesize = 8
@@ -10,10 +21,10 @@ stopbits = 1
 timeout = 0
 
 [uarts]
-uart0 = { phy = 0, dev = "/dev/ttyUSB2"}
-uart1 = { phy = 0, dev = "/dev/ttyUSB4"}
-# uart2 = { phy = 1, dev = "/dev/ttyUSB3"}
-# uart3 = { phy = 1, dev = "/dev/ttyUSB5"}
+uart0 = { id = 0, phy = 0, dev = "/dev/ttyUSB2"}
+uart1 = { id = 1, phy = 0, dev = "/dev/ttyUSB4"}
+# uart2 = { id = 2, phy = 1, dev = "/dev/ttyUSB3"}
+# uart3 = { id = 3, phy = 1, dev = "/dev/ttyUSB5"}
 
 [mqtt]
 client = '48vCharger_py'

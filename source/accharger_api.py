@@ -1,7 +1,26 @@
+import temperature_api
 import remote_api
 import uart_driver
 import time
 import queue
+
+
+class AC_TemperatureData(temperature_api.TemperatureData):
+    def __init__(self, command_name, command_dict, command_callback):
+        super().__init__(command_name, command_dict, command_callback)
+
+
+class AC_TemperatureAPI(temperature_api.TemperatureAPI):
+    @classmethod
+    def class_init(cls,
+                   config_file='accharger.toml',
+                   temperature_data_class=AC_TemperatureData,
+                   threaded=False):
+        return super().class_init(config_file, temperature_data_class,
+                                  threaded)
+
+    def __init__(self, *args, **kargs):
+        super().__init__(*args, **kargs)
 
 
 class AC_Charger_RemoteCommandData(remote_api.RemoteCommandData):
@@ -80,8 +99,9 @@ class AC_Charger_API(remote_api.RemoteAPI):
 
 
 control_test = AC_Charger_API.class_init()
+temperature_api = AC_TemperatureAPI.class_init()
 print(control_test.config["uarts"])
-control_test.run_command('set_voltage', 56)
+control_test.run_command('set_voltage', 12.8)
 control_test.run_command('set_current', 2)
 control_test.run_command('set_output', 1)
 control_test.run_command('set_auto_output', 1)
@@ -89,7 +109,7 @@ control_test.run_command('read_actual_current')
 control_test.run_command('read_actual_working_time')
 control_test.run_command('read_actual_voltage')
 time.sleep(1)
-control_test.run_command('set_voltage', 57, 'uart0')
+control_test.run_command('set_voltage', 12.9, 'uart0')
 time.sleep(1)
 control_test.run_command('read_actual_voltage')
 
