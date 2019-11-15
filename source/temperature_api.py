@@ -13,9 +13,9 @@ class Temperature_Driver(threading.Thread):
         print ('init Temperature_Driver')
         handle_temp_t = {}
         for key, value in caller.config['temperature_devices'].items():
-            handle_temp_t[key] = cls(key, value, caller)
-            handle_temp_t[key].daemon = True
-            handle_temp_t[key].start()
+            handle_temp_t[value['id']] = cls(value['id'], value, caller)
+            handle_temp_t[value['id']].daemon = True
+            handle_temp_t[value['id']].start()
         return handle_temp_t
 
     def __init__(self, threadID, value, caller):
@@ -40,8 +40,8 @@ class Temperature_Driver(threading.Thread):
             # self.check_command_queue()
             time.sleep(0.01)
             with open(self.file) as f:
-                self.read_data = f.read()
-            print('{} = {}'.format(self.dev, self.read_data))
+                self.caller.c[self.id].extract_values(f.read().splitlines())
+
             if i > 100:
                 # print (self.control.command_list)
                 i = 0
@@ -49,19 +49,35 @@ class Temperature_Driver(threading.Thread):
 
 class TemperatureData(object):
 
-    def __init__(self, command_name, command_dict, command_callback):
-        self.command_name = command_name
+    def __init__(self, id, value, config_dict):
         self.value = 0
-        self._command_callback = command_callback
+        self.id = value['id']
+        self.phy = value['phy']
+        self.dev = value['dev']
+        self.regex = {}
+        self.regex['line0'] = re.compile(r'^' + config_dict
+                                         ['temperature_regex']['line0'])
+        self.regex['line1'] = re.compile(r'^' + config_dict
+                                         ['temperature_regex']['line1'])
+        self.regex['prefix'] = re.compile(r'^' + config_dict
+                                          ['temperature_regex']['prefix'])
         self.waiting_on_data = False
-        self.__dict__.update(command_dict.copy())
 
     @classmethod
-    def class_init(cls, command_dict, command_callback):
+    def class_init(cls, config):
         c = {}
-        for k in command_dict.copy():
-            c[k] = cls(k, command_dict, command_callback)
+        for key, value in config['temperature_devices'].copy().items():
+            c[value['id']] = cls(value['id'], value, config)
         return c
+
+    def extract_values(self, value):
+        if not (self.regex['line0'].match(value[0])
+                and self.regex['line1'].match(value[1])):
+            raise Exception('error {} returned bad string = {}'
+                            .format(self.dev, value))
+        self.value = (float(self.regex['prefix'].sub('', value[1]))) / 1000
+
+        print(self.value)
 
 
 class TemperatureAPI(threading.Thread):
@@ -91,9 +107,8 @@ class TemperatureAPI(threading.Thread):
         with open(os.path.join(config_path, config_file)) as f:
             self.config = toml.load(f, _dict=dict)
 
-        self.c = temperature_data_class.class_init(self.config[
-            'temperature_devices'], self.command_callback)
+        self.c = temperature_data_class.class_init(self.config)
         self.handle_temp_t = Temperature_Driver.class_init(self)
 
-    def command_callback(self):
+    def command_callback(self, value):
         time.sleep(0.01)

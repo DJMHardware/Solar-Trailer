@@ -6,8 +6,8 @@ import queue
 
 
 class AC_TemperatureData(temperature_api.TemperatureData):
-    def __init__(self, command_name, command_dict, command_callback):
-        super().__init__(command_name, command_dict, command_callback)
+    def __init__(self, id, value, config_dict):
+        super().__init__(id, value, config_dict)
 
 
 class AC_TemperatureAPI(temperature_api.TemperatureAPI):
@@ -101,7 +101,7 @@ class AC_Charger_API(remote_api.RemoteAPI):
 control_test = AC_Charger_API.class_init()
 temperature_api = AC_TemperatureAPI.class_init()
 print(control_test.config["uarts"])
-control_test.run_command('set_voltage', 12.8)
+control_test.run_command('set_voltage', 56)
 control_test.run_command('set_current', 2)
 control_test.run_command('set_output', 1)
 control_test.run_command('set_auto_output', 1)
@@ -109,7 +109,7 @@ control_test.run_command('read_actual_current')
 control_test.run_command('read_actual_working_time')
 control_test.run_command('read_actual_voltage')
 time.sleep(1)
-control_test.run_command('set_voltage', 12.9, 'uart0')
+control_test.run_command('set_voltage', 57, 'uart0')
 time.sleep(1)
 control_test.run_command('read_actual_voltage')
 
