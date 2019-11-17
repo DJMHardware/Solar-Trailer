@@ -13,10 +13,10 @@ line1 = '([0-9a-f]{2}\s){9}t=\d{5}'
 prefix = '([0-9a-f]{2}\s){9}t='
 
 [temperature_devices]
-temp0 = { id = 0, phy = 0, dev = "28-00000a91c123"}
-temp1 = { id = 1, phy = 0, dev = "28-00000a92406c"}
-temp2 = { id = 2, phy = 1, dev = "28-00000a930dc2"}
-temp3 = { id = 3, phy = 2, dev = "28-00000b1f4fd4"}
+temp0 = { id = 0, phy = 0, sub = 0, dev = "28-00000a92406c"}
+temp1 = { id = 1, phy = 0, sub = 1, dev = "28-00000a930dc2"}
+temp2 = { id = 2, phy = 1, sub = 0, dev = "28-00000a91c123"}
+temp3 = { id = 3, phy = 1, sub = 1, dev = "28-00000b1f4fd4"}
 
 [uart]
 baudrate = 4800

@@ -37,10 +37,28 @@ class Temperature_Driver(threading.Thread):
     def run(self):
         i = 0
         while True:
+            while True:
+                if i > 0:
+                    # print(self.dev + ' run command = '
+                    #      + str(self.dev))
+                    # else:
+                    print(self.dev + ' retry command = '
+                          + str(self.dev))
+                try:
+                    with open(self.file) as f:
+                        self.caller.c[self.id].extract_values(
+                            f.read().splitlines())
+                    time.sleep(0.01)
+                except Exception as e:
+                    print(repr(e))
+                    i += 1
+                    if i > 10:
+                        raise Exception(repr(e))
+                    time.sleep(.01)
+                    continue
+                break
             # self.check_command_queue()
             time.sleep(0.01)
-            with open(self.file) as f:
-                self.caller.c[self.id].extract_values(f.read().splitlines())
 
             if i > 100:
                 # print (self.control.command_list)
@@ -77,7 +95,7 @@ class TemperatureData(object):
                             .format(self.dev, value))
         self.value = (float(self.regex['prefix'].sub('', value[1]))) / 1000
 
-        print(self.value)
+        print('{} = {}'.format(self.dev, self.value))
 
 
 class TemperatureAPI(threading.Thread):

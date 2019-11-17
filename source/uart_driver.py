@@ -45,14 +45,14 @@ class Uart_Driver(threading.Thread):
         if c is not None:
             i = 0
             while True:
-                if i == 0:
-                    print (self.dev + ' run command = '
-                           + str(c.command_name) + ', '
-                           + str(c.value))
-                else:
-                    print (self.dev + ' retry command = '
-                           + str(c.command_name) + ', '
-                           + str(c.value))
+                if i != 0:  # == 0:
+                    # print(self.dev + ' run command = '
+                    #       + str(c.command_name) + ', '
+                    #       + str(c.value))
+                    # else:
+                    print(self.dev + ' retry command = '
+                          + str(c.command_name) + ', '
+                          + str(c.value))
                 try:
                     c.return_values(self.uart_IO(
                         c.output_string[self.dev], c.suffix), self.dev)
@@ -79,7 +79,7 @@ class Uart_Driver(threading.Thread):
             time.sleep(0.01)
         self.busy = True
         self.ser.write(output.encode())
-        print (self.dev + ' sent = ' + str(re.sub(EOL_string, '', output)))
+        # print(self.dev + ' sent = ' + str(re.sub(EOL_string, '', output)))
         endofline = False
         timeout = 0
         reply = ''

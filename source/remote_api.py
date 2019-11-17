@@ -40,7 +40,7 @@ class RemoteCommandData(object):
                                     + self.value_string[dev])
         self.output_string[dev] = (self.prefix + self.command_string[dev]
                                    + self.suffix)
-        print('output string {}'.format(self.output_string))
+        # print('output string {}'.format(self.output_string))
 
     def _human_to_machine(self, value):
         if (value is None):
@@ -49,7 +49,7 @@ class RemoteCommandData(object):
             value = self.range['min']
         if value > self.range['max']:
             value = self.range['max']
-        if self.range['scale'] is not 1:
+        if self.range['scale'] != 1:
             value = int(round(self.value / self.range['scale']))
         return self.send_value_format.format(value)
 
@@ -67,7 +67,7 @@ class RemoteCommandData(object):
             return values
         for i, value in enumerate(values):
             value = int(value, self.encoding_base)
-            if self.range['scale'] is not 1:
+            if self.range['scale'] != 1:
                 value = (float(value)
                          * self.range['scale'])
                 self.reply_value_format = (
@@ -115,7 +115,7 @@ class RemoteCommandData(object):
         return reply
 
     def _callback(self, dev):
-        print('_callback {}'.format(dev))
+        # print('_callback {}'.format(dev))
         self._compute_reply()
         self.waiting_on_data[dev] = False
         self._command_callback(self.command_name, dev,
@@ -148,6 +148,7 @@ class RemoteAPI(threading.Thread):
         handle_control_t = cls(threadID, config_file,
                                remote_command_data_class, threaded)
         if threaded:
+            print('init RemoteAPI class threaded')
             handle_control_t.daemon = True
             handle_control_t.start()
         return handle_control_t
@@ -155,6 +156,7 @@ class RemoteAPI(threading.Thread):
     def __init__(self, threadID, config_file,
                  remote_command_data_class, threaded):
         if threaded:
+            print('init RemoteAPI thread')
             threading.Thread.__init__(self)
             self.threadLock = threading.Lock()
             self.threadID = threadID
@@ -176,19 +178,18 @@ class RemoteAPI(threading.Thread):
 
     def command_callback(self, command_name, dev, values, new_data):
         self.command_queue[dev].task_done()
-        print('done {} {}'.format(self.command_queue[dev].qsize(), dev))
+        # print('done {} {}'.format(self.command_queue[dev].qsize(), dev))
         self.current_command[dev] = None
-        if new_data:
-            print('{} = {}'.format(command_name, values))
+        # if new_data:
+        #     print('{} = {}'.format(command_name, values))
 
     def get_command(self, dev):
         if (not self.command_queue[dev].empty() and self.current_command[dev] is None):
             temp = self.command_queue[dev].get()
-            print('get {} {} {}'.format(
-                self.command_queue[dev].qsize(), temp['command_name'], dev))
+            # print('get {} {} {}'.format(
+            #     self.command_queue[dev].qsize(), temp['command_name'], dev))
             self.current_command[dev] = temp['c'][temp['command_name']]
             self.current_command[dev].set_value(temp['value'], dev)
-            #self.current_command[dev].start_commmand(dev)
         return self.current_command[dev]
 
     def run_command(self, command_name, value=None, dev=None):
@@ -199,19 +200,18 @@ class RemoteAPI(threading.Thread):
             for uart in self.config['uarts']:
                 self.queue_command(command_name, value, self.config['uarts']
                                    [uart]['dev'])
-        print('command = {} dev = {}'.format(command_name, dev))
+        # print('command = {} dev = {}'.format(command_name, dev))
 
     def queue_command(self, command_name, value=None, dev=None):
         self.command_queue[dev].put({'c': self.c,
                                      'command_name': command_name,
                                      'value': value,
                                      'dev': dev})
-        print('put {} {} {}'.format(self.command_queue[dev].qsize(),
-                                    command_name, dev))
-
+        # print('put {} {} {}'.format(self.command_queue[dev].qsize(),
+        #                             command_name, dev))
 
     def run(self):
         while True:
             # value = self.check_command_reply()
-            print ('run control ')
+            print('run control ')
             time.sleep(1)
