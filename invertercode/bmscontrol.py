@@ -94,7 +94,7 @@ class handle_rs232(threading.Thread):
     def __init__(self, threadID):
         threading.Thread.__init__(self)
         self.threadID = threadID
-        self.ser = serial.Serial("/dev/ttyUSB1", baudrate=9600, bytesize=8,
+        self.ser = serial.Serial("/dev/ttyUSB_P2", baudrate=9600, bytesize=8,
                                  parity='E', stopbits=1, timeout=0.1)
         self.key = 0xF007
         self.reply_new = False

@@ -9,7 +9,7 @@ temp_file = 'w1_slave' # 'temp1_input'
 
 [temperature_regex]
 line0 = '([0-9a-f]{2}\s){9}:\scrc=[0-9a-f]{2}\sYES'
-line1 = '([0-9a-f]{2}\s){9}t=\d{5}'
+line1 = '([0-9a-f]{2}\s){9}t=\d' # {5}
 prefix = '([0-9a-f]{2}\s){9}t='
 
 [temperature_devices]
@@ -26,10 +26,10 @@ stopbits = 1
 timeout = 0
 
 [uarts]
-uart0 = { id = 0, phy = 0, dev = "/dev/ttyUSB2"}
-uart1 = { id = 1, phy = 0, dev = "/dev/ttyUSB4"}
-# uart2 = { id = 2, phy = 1, dev = "/dev/ttyUSB3"}
-# uart3 = { id = 3, phy = 1, dev = "/dev/ttyUSB5"}
+uart0 = { id = 0, phy = 0, sub = 0, dev = "/dev/ttyUSB2"}
+uart1 = { id = 1, phy = 0, sub = 1, dev = "/dev/ttyUSB4"}
+# uart2 = { id = 2, phy = 1, sub = 0, dev = "/dev/ttyUSB3"}
+# uart3 = { id = 3, phy = 1, sub = 1, dev = "/dev/ttyUSB5"}
 
 [mqtt]
 client = '48vCharger_py'
