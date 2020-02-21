@@ -8,7 +8,7 @@ stopbits = 1
 timeout = 0.1
 
 [uarts]
-uart0 = {dev = '/dev/ttyUSB1', phy = 0}
+uart0 = {dev = '/dev/ttyUSB_P2', phy = 0}
 
 [mqtt]
 client = 'BMS_py'

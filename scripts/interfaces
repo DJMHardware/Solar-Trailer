@@ -1,0 +1,42 @@
+# interfaces(5) file used by ifup(8) and ifdown(8)
+
+# Please note that this file is written to be used with dhcpcd
+# For static IP, consult /etc/dhcpcd.conf and 'man dhcpcd.conf'
+
+# Include files from /etc/network/interfaces.d:
+# source-directory /etc/network/interfaces.d
+auto lo
+iface lo inet loopback
+
+# wired ethernet
+auto enxb827ebe7dfa6 
+allow-hotplug enxb827ebe7dfa6
+iface enxb827ebe7dfa6 inet manual
+
+#huewia LTE Modem
+auto enx0c5b8f279a64
+allow-hotplug enx0c5b8f279a64
+iface enx0c5b8f279a64 inet dhcp
+	pre-up (/sbin/route del default 2> /dev/null || true)
+	pre-up /usr/sbin/iptables-restore < /etc/iptables/rules-cell.v4
+        post-down /etc/wpa_supplicant/wpa_cli_script.sh wlx04d4c464c21f CONNECTED
+
+#asustek USB Wireless 
+auto wlx04d4c464c21f
+allow-hotplug wlx04d4c464c21f
+iface wlx04d4c464c21f inet dhcp
+	wpa-conf /etc/wpa_supplicant/wpa_supplicant.conf
+	pre-up (until /sbin/wpa_cli -i wlx04d4c464c21f -a /etc/wpa_supplicant/wpa_cli_script.sh -B; do echo waiting; sleep 0.5; done) &
+
+# internal wireless hotspot
+allow-hotplug wlan0
+iface wlan0 inet manual
+
+# Bridge setup
+# bridge the internal wifi hotspot and the wired ethernet
+auto br0
+iface br0 inet static
+	bridge_ports enxb827ebe7dfa6 wlan0
+        address 192.168.42.1
+        netmask 255.255.255.0
+

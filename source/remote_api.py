@@ -129,8 +129,8 @@ class RemoteCommandData(object):
         self.reply_buffer = self.extract_values(value, dev)
         self._callback(dev)
 
-    def start_commmand(self, dev=None):
-        print('********{} = {}'.format(self.command_name, self.complete))
+    def start_commmand(self, dev='None'):
+        # print('********{} = {}'.format(self.command_name, self.complete))
         if hasattr(self.waiting_on_data, dev) and self.waiting_on_data[dev]:
             raise Exception('{} {} waiting on data still'
                             .format(dev, self.command_name))
@@ -178,10 +178,10 @@ class RemoteAPI(threading.Thread):
 
     def command_callback(self, command_name, dev, values, new_data):
         self.command_queue[dev].task_done()
-        # print('done {} {}'.format(self.command_queue[dev].qsize(), dev))
+        print('done {} {}'.format(self.command_queue[dev].qsize(), dev))
         self.current_command[dev] = None
-        # if new_data:
-        #     print('{} = {}'.format(command_name, values))
+        if new_data:
+            print('{} = {}'.format(command_name, values))
 
     def get_command(self, dev):
         if (not self.command_queue[dev].empty() and self.current_command[dev] is None):

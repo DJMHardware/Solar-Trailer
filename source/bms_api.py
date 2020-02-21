@@ -8,7 +8,7 @@ class BMS_RemoteCommandData(remote_api.RemoteCommandData):
     def __init__(self, command_name, command_dict, command_callback):
         super().__init__(command_name, command_dict, command_callback)
         if not hasattr(self, 'groupcmd'):
-            print ('cmd = 0x{:04X}'.format(self.cmd))
+            print('cmd = 0x{:04X}'.format(self.cmd))
             self._build_command_string()
             self._compute_reply_regex()
         else:
@@ -32,13 +32,14 @@ class BMS_RemoteCommandData(remote_api.RemoteCommandData):
                 command_dict[k]['groupcmd'] = True
         return super().class_init(command_dict, command_callback)
 
-    def _build_command_string(self):
-        super()._build_command_string()
-        self.command_string = (
-            '{:02X}'.format(int((len(self.command_string) / 2) + 1))
+    def _build_command_string(self, value=None, dev='dev1'):
+        super()._build_command_string(value, dev)
+        self.command_string[dev] = (
+            '{:02X}'.format(int((len(self.command_string[dev]) / 2) + 1))
             + '{:02X}'.format(self.mode)
-            + self.command_string)
-        self.output_string = (self.prefix + self.command_string + self.suffix)
+            + self.command_string[dev])
+        self.output_string[dev] = (self.prefix + self.command_string[dev]
+                                   + self.suffix)
 
     def _compute_reply_regex(self):
         r = self.reply_regex
@@ -95,9 +96,9 @@ class BMS_API(remote_api.RemoteAPI):
             p = self.c[c.parent_command]
             p.add_data(c.cmd, c.reply, c.span)
 
-    def command_callback(self, command_name, values, new_data):
+    def command_callback(self, command_name, dev, values, new_data):
         self._check_callback_group_command(command_name, values, new_data)
-        super().command_callback(command_name, values, new_data)
+        super().command_callback(command_name, dev, values, new_data)
 
     def run_command(self, command_name, value=None):
         if hasattr(self.c[command_name], 'cmds'):
@@ -107,7 +108,8 @@ class BMS_API(remote_api.RemoteAPI):
                 temp['c'] = self.c
                 temp['command_name'] = command_name + str(i + 1)
                 temp['value'] = value
-                self.command_queue.put(temp)
+                super().run_command(command_name + str(i + 1), value)
+                # self.command_queue.put(temp)
         else:
             super().run_command(command_name, value)
 
@@ -116,7 +118,7 @@ control_bms = BMS_API.class_init()
 control_bms.run_command('Relays Status')
 control_bms.run_command('Pack State of Charge')
 control_bms.run_command('Pack Voltage')
-control_bms.run_command('Cell Voltages')
+# control_bms.run_command('Cell Voltages')
 
 while True:
     time.sleep(0.01)
